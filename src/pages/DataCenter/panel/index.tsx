@@ -98,10 +98,10 @@ export default function Content() {
   const bottomBox = useMoveTo("toTop", 0.8, 0.5);
 
   useEffect(() => {
-    const unMapPlaySub = useConfigStore.subscribe(
-      (s) => s.mapPlayComplete,
-      (v) => {
-        if (v) {
+    // const unMapPlaySub = useConfigStore.subscribe(
+    //   (s) => s.mapPlayComplete,
+    //   (v) => {
+    //     if (v) {
           topBox.restart();
           bottomBox.restart();
           leftBox.restart();
@@ -110,9 +110,9 @@ export default function Content() {
           rightBox.restart();
           rightBox1.restart();
           rightBox2.restart();
-        }
-      }
-    );
+    //     }
+    //   }
+    // );
 
     const unModeSub = useConfigStore.subscribe(
       (s) => s.mode,
@@ -138,7 +138,7 @@ export default function Content() {
     );
 
     return () => {
-      unMapPlaySub();
+      // unMapPlaySub();
       unModeSub();
     };
   }, []);

@@ -6,16 +6,19 @@ import type { CityGeoJSON } from "@/types/map";
 
 import scMapData from "@/assets/sc.json";
 import scOutlineData from "@/assets/sc_outline.json";
+import ServerRoom from "./serverroom";
 
-const mapData = scMapData as CityGeoJSON,
-  outlineData = scOutlineData as CityGeoJSON;
+// const mapData = scMapData as CityGeoJSON,
+//   outlineData = scOutlineData as CityGeoJSON;
 
 export default function Scene() {
   return (
     <Suspense fallback={null}>
       <Cloud />
 
-      <Base data={mapData} outlineData={outlineData} />
+      {/* <Base data={mapData} outlineData={outlineData} /> */}
+
+      <ServerRoom />
 
       <Bottom />
     </Suspense>
