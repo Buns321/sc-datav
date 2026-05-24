@@ -6,7 +6,6 @@ import { COLORS, ROUGHNESS, METALNESS } from "./materials";
 export default function ServerRoom() {
   const { scene } = useGLTF("/sc-datav/model/glb/server_room.glb");
 
-  // 赋材质，初始透明（为后续淡入动画做准备）
   useEffect(() => {
     scene.traverse((child) => {
       if (!(child instanceof Mesh)) return;
@@ -28,8 +27,6 @@ export default function ServerRoom() {
         color: new Color(color),
         roughness,
         metalness,
-        transparent: true,
-        opacity: 0,
       });
     });
   }, [scene]);
