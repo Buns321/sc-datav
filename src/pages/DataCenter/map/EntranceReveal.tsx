@@ -20,9 +20,6 @@ export default function EntranceReveal({ children }: EntranceRevealProps) {
   useLayoutEffect(() => {
     if (!groupRef.current) return;
 
-    // 记录相机初始位置（正面），动画结束后回到这里
-    const homePos = camera.position.clone();
-
     const tl = gsap.timeline({
       onComplete: () => {
         useConfigStore.setState({ mapPlayComplete: true });
