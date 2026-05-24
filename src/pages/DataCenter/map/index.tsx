@@ -17,7 +17,7 @@ export default function Index() {
       <Canvas
         flat
         shadows
-        camera={{ position: [-10, 5, 12], fov: 50, far: 2000, near: 1 }}
+        camera={{ position: [-50, 125, 250], fov: 50, far: 2000, near: 1 }}
         dpr={[1, 2]}>
         <color attach="background" args={["#fff5e8"]} />
         <Lights />
@@ -37,8 +37,8 @@ export default function Index() {
           enableZoom
           enableRotate
           zoomSpeed={0.3}
-          minDistance={2}
-          maxDistance={50}
+          minDistance={100}
+          maxDistance={300}
           maxPolarAngle={1.5}
         />
       </Canvas>
