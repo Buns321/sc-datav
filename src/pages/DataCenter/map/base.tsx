@@ -14,6 +14,7 @@ import type { CityGeoJSON } from "@/types/map";
 import City, { type CityProps } from "./city";
 import loadTexture from "../helpers/loadTexture";
 import { useConfigStore } from "../stores";
+import { CAMERA_SWEEP } from "./camera";
 
 import map from "@/assets/sc_map.png";
 import normalMap from "@/assets/sc_normal_map.png";
@@ -94,9 +95,7 @@ export default function Base(props: BaseProps) {
     });
 
     tl.to(camera.position, {
-      x: 60,
-      y: 125,
-      z: 160,
+      ...CAMERA_SWEEP,
       duration: 2,
       ease: "circ.out",
     });

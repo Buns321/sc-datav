@@ -98,18 +98,32 @@ export default function Content() {
   const bottomBox = useMoveTo("toTop", 0.8, 0.5);
 
   useEffect(() => {
+    // 6 秒后启动 UI 入场动画（等 3D 相机巡览完成）
+    const timer1 = setTimeout(() => {
+      topBox.restart();
+    }, 1200);  // 4500ms 是根据相机动画时长和节奏微调的，确保动画衔接更自然
+    const timer2 = setTimeout(() => {
+      bottomBox.restart();
+      leftBox.restart();
+      leftBox1.restart();
+      leftBox2.restart();
+      rightBox.restart();
+      rightBox1.restart();
+      rightBox2.restart();
+    }, 4300);  // 4500ms 是根据相机动画时长和节奏微调的，确保动画衔接更自然
+
     // const unMapPlaySub = useConfigStore.subscribe(
     //   (s) => s.mapPlayComplete,
     //   (v) => {
     //     if (v) {
-          topBox.restart();
-          bottomBox.restart();
-          leftBox.restart();
-          leftBox1.restart();
-          leftBox2.restart();
-          rightBox.restart();
-          rightBox1.restart();
-          rightBox2.restart();
+    //       topBox.restart();
+    //       bottomBox.restart();
+    //       leftBox.restart();
+    //       leftBox1.restart();
+    //       leftBox2.restart();
+    //       rightBox.restart();
+    //       rightBox1.restart();
+    //       rightBox2.restart();
     //     }
     //   }
     // );
@@ -138,6 +152,8 @@ export default function Content() {
     );
 
     return () => {
+      clearTimeout(timer1); // 清空定时器，避免组件卸载后仍尝试启动动画
+      clearTimeout(timer2); // 清空定时器，避免组件卸载后仍尝试启动动画
       // unMapPlaySub();
       unModeSub();
     };
