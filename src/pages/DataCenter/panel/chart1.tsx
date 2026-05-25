@@ -14,6 +14,7 @@ import {
 import { LabelLayout } from "echarts/features";
 
 import cityData from "../cityData";
+import type { TokenMap } from "../theme";
 
 type BarOption = ComposeOption<
   | PictorialBarSeriesOption
@@ -22,8 +23,6 @@ type BarOption = ComposeOption<
   | GridComponentOption
 >;
 
-const colors = ["#fbdf88", "#ea580c"];
-
 const citys = Object.keys(cityData);
 
 const data = Array.from({ length: 5 }, (_, k) => ({
@@ -31,7 +30,8 @@ const data = Array.from({ length: 5 }, (_, k) => ({
   value: cityData[citys[k] as keyof typeof cityData].population,
 }));
 
-export default function Chart1() {
+export default function Chart1({ activeTokens }: { activeTokens: TokenMap }) {
+  const colors = activeTokens.chartGradient;
   return (
     <Chart<BarOption>
       use={[PictorialBarChart, GridComponent, TooltipComponent, LabelLayout]}
@@ -57,13 +57,13 @@ export default function Chart1() {
             margin: 16,
             inside: false,
             verticalAlign: "middle",
-            color: "#000000",
+            color: activeTokens.textPrimary,
             formatter: (v, i) => {
               return `{a|NO.${++i}} ${v}`;
             },
             rich: {
               a: {
-                color: "rgba(0, 0, 0,0.6)",
+                color: activeTokens.textTertiary,
               },
             },
           },
@@ -100,7 +100,7 @@ export default function Chart1() {
             },
             label: {
               show: true,
-              color: "rgba(0, 0, 0,0.8)",
+              color: activeTokens.textSecondary,
               valueAnimation: true,
               fontSize: 16,
               fontWeight: "bold",

@@ -2,8 +2,8 @@ import Chart from "@/components/chart";
 import { LineChart } from "echarts/charts";
 import styled from "styled-components";
 import NumberAnimation from "@/components/numberAnimation";
+import type { TokenMap } from "../theme";
 
-const colors = ["#fbdf88", "#ea580c"];
 const data = [270, 400, 380, 420, 300, 410, 400, 330, 210, 290];
 
 const Wrapper = styled.div`
@@ -23,7 +23,7 @@ const Statistics = styled.div`
 
 const StatisticsTitle = styled.div`
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.7);
+  color: var(--text-secondary);
 `;
 
 const StatisticsNumber = styled(NumberAnimation)`
@@ -32,13 +32,13 @@ const StatisticsNumber = styled(NumberAnimation)`
   gap: 4px;
   font-size: 28px;
   font-weight: 600;
-  color: #ea580c;
+  color: var(--primary);
 
   &::after {
     content: "亿万元";
     display: inline-block;
     font-size: 12px;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--text-secondary);
     font-weight: normal;
   }
 `;
@@ -46,30 +46,31 @@ const StatisticsNumber = styled(NumberAnimation)`
 const Statistics1 = styled.div`
   display: flex;
   align-items: center;
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--text-secondary);
 `;
 
 const Statistics1Number = styled(NumberAnimation)`
   font-size: 20px;
   font-weight: 600;
   margin-left: 16px;
-  color: #ea580c;
+  color: var(--primary);
 `;
 
 const CompanyIcon = styled.svg.attrs({
   viewBox: "0 0 1024 1024",
   width: "1em",
   height: "1em",
-  fill: colors[0],
   children: (
     <path d="M597.479619 154.063238V852.358095h52.150857V320.658286l169.252572 58.88a56.32 56.32 0 0 1 25.795047 42.959238l0.170667 4.388571V852.358095H902.095238V926.47619H121.904762v-74.093714h56.953905v-566.613333c0-19.456 10.166857-37.546667 26.843428-47.85981l304.444953-131.705904c38.034286-23.503238 87.332571 3.510857 87.332571 47.859809zM471.771429 482.816l-167.107048 68.266667v80.115809l167.107048-68.242286v-80.14019z m0-175.225905L304.664381 377.904762v80.530286l167.107048-70.339048v-80.457143z" />
   ),
 })`
   vertical-align: middle;
   margin-right: 4px;
+  fill: var(--secondary);
 `;
 
-export default function Charts4() {
+export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
+  const colors = activeTokens.chartGradient;
   return (
     <Wrapper>
       <Chart
@@ -81,9 +82,9 @@ export default function Charts4() {
               type: "shadow",
             },
             textStyle: {
-              color: "rgba(0, 0, 0,0.8)",
+              color: activeTokens.textSecondary,
             },
-            backgroundColor: "rgba(255, 245, 232,0.8)",
+            backgroundColor: activeTokens.surfaceOverlay,
             borderColor: colors[1],
             borderWidth: 1,
             borderRadius: 8,

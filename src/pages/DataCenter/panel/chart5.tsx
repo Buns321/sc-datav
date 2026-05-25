@@ -7,12 +7,11 @@ import {
   type LegendComponentOption,
   type TooltipComponentOption,
 } from "echarts/components";
+import type { TokenMap } from "../theme";
 
 type PieOption = ComposeOption<
   PieSeriesOption | TooltipComponentOption | LegendComponentOption
 >;
-
-const color = ["#fbdf88", "#ffa800", "#ff5b00", "#ff3000"];
 
 const trafficWay = [
   { name: "第一季度", value: 20 },
@@ -21,32 +20,34 @@ const trafficWay = [
   { name: "第四季度", value: 40 },
 ];
 
-const data = trafficWay.reduce<PieSeriesOption["data"]>((pre, cur, i) => {
-  pre?.push(
-    {
-      value: cur.value,
-      name: cur.name,
-      itemStyle: {
-        borderRadius: 10,
-        shadowBlur: 20,
-        color: color[i],
-        shadowColor: color[i],
-      },
-    },
-    {
-      value: 2,
-      name: "",
-      itemStyle: {
-        color: "rgba(0, 0, 0, 0)",
-        borderColor: "rgba(0, 0, 0, 0)",
-        borderWidth: 0,
-      },
-    }
-  );
-  return pre;
-}, []);
+export default function Chart5({ activeTokens }: { activeTokens: TokenMap }) {
+  const color = activeTokens.chartSeries;
 
-export default function Chart5() {
+  const data = trafficWay.reduce<PieSeriesOption["data"]>((pre, cur, i) => {
+    pre?.push(
+      {
+        value: cur.value,
+        name: cur.name,
+        itemStyle: {
+          borderRadius: 10,
+          shadowBlur: 20,
+          color: color[i],
+          shadowColor: color[i],
+        },
+      },
+      {
+        value: 2,
+        name: "",
+        itemStyle: {
+          color: "rgba(0, 0, 0, 0)",
+          borderColor: "rgba(0, 0, 0, 0)",
+          borderWidth: 0,
+        },
+      }
+    );
+    return pre;
+  }, []);
+
   return (
     <Chart<PieOption>
       use={[PieChart, TooltipComponent, LegendComponent]}
@@ -62,7 +63,7 @@ export default function Chart5() {
           top: "middle",
           right: "10%",
           textStyle: {
-            color: "#000000",
+            color: activeTokens.textPrimary,
           },
           itemGap: 20,
         },

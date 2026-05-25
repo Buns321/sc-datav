@@ -15,6 +15,7 @@ import {
   type MarkPointComponentOption,
   type TooltipComponentOption,
 } from "echarts/components";
+import type { TokenMap } from "../theme";
 
 type LineOption = ComposeOption<
   | LineSeriesOption
@@ -25,7 +26,6 @@ type LineOption = ComposeOption<
   | MarkPointComponentOption
 >;
 
-const colors = ["#fbdf88", "#ea580c"];
 const dataType = { type1: "今年同期", type2: "去年同期" };
 
 let data: [string[], number[], number[]] = [[], [], []];
@@ -36,9 +36,10 @@ for (let i = 0; i < 30; i++) {
   data[2].push(Math.round(i * Math.random() * 1050));
 }
 
-export default function Chart2() {
+export default function Chart2({ activeTokens }: { activeTokens: TokenMap }) {
   const chartRef = useRef<EChartsType>(null);
   const xLength = useRef(0);
+  const colors = activeTokens.chartGradient;
 
   useRafInterval(() => {
     if (chartRef.current) {
@@ -71,9 +72,9 @@ export default function Chart2() {
             type: "shadow",
           },
           textStyle: {
-            color: "rgba(0, 0, 0,0.8)",
+            color: activeTokens.textSecondary,
           },
-          backgroundColor: "rgba(255, 245, 232,0.8)",
+          backgroundColor: activeTokens.surfaceOverlay,
           borderColor: colors[1],
           borderWidth: 1,
           borderRadius: 8,
@@ -103,12 +104,12 @@ export default function Chart2() {
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: "rgba(0, 0, 0, 0.1)",
+              color: activeTokens.outline,
             },
           },
           axisLabel: {
             interval: 0,
-            color: "rgba(0, 0, 0, 0.6)",
+            color: activeTokens.textTertiary,
           },
           splitLine: {
             show: false,
@@ -122,7 +123,7 @@ export default function Chart2() {
           type: "value",
           axisLabel: {
             interval: 0,
-            color: "rgba(0, 0, 0, 0.6)",
+            color: activeTokens.textTertiary,
           },
           splitLine: {
             show: false,
@@ -130,7 +131,7 @@ export default function Chart2() {
           axisLine: {
             show: true,
             lineStyle: {
-              color: "rgba(0, 0, 0, 0.1)",
+              color: activeTokens.outline,
             },
           },
         },
@@ -169,7 +170,7 @@ export default function Chart2() {
               symbolSize: [50, 20],
               symbolOffset: [0, -10],
               label: {
-                color: "#ffffff",
+                color: activeTokens.onPrimary,
               },
               data: [
                 {
@@ -207,7 +208,7 @@ export default function Chart2() {
               symbolSize: [50, 20],
               symbolOffset: [0, -10],
               label: {
-                color: "#ffffff",
+                color: activeTokens.onPrimary,
               },
               data: [
                 {

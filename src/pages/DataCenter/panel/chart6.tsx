@@ -9,13 +9,13 @@ import {
 } from "echarts/components";
 import type { ComposeOption, EChartsType } from "echarts/core";
 import { useRef } from "react";
+import type { TokenMap } from "../theme";
 
 type BarOption = ComposeOption<
   BarSeriesOption | TooltipComponentOption | GridComponentOption
 >;
 
 const data = [3000, 2000, 4000, 5000, 4500];
-const colors = ["#fbdf88", "#ea580c"];
 const xData = [
   "50万以下",
   "50～100万",
@@ -23,9 +23,10 @@ const xData = [
   "500～1000万",
   "1000万以上",
 ];
-export default function Chart6() {
+export default function Chart6({ activeTokens }: { activeTokens: TokenMap }) {
   const chartRef = useRef<EChartsType>(null);
   const tipIndex = useRef(0);
+  const colors = activeTokens.chartGradient;
 
   useRafInterval(
     () => {
@@ -49,12 +50,12 @@ export default function Chart6() {
       option={{
         tooltip: {
           trigger: "axis",
-          backgroundColor: "rgba(255, 245, 232,0.8)",
+          backgroundColor: activeTokens.surfaceOverlay,
           borderColor: colors[1],
           borderWidth: 1,
           borderRadius: 8,
           textStyle: {
-            color: "rgba(0, 0, 0,0.8)",
+            color: activeTokens.textSecondary,
             fontSize: 13,
             align: "left",
           },
@@ -78,12 +79,12 @@ export default function Chart6() {
           type: "category",
           axisLine: {
             lineStyle: {
-              color: "rgba(0, 0, 0, 0.1)",
+              color: activeTokens.outline,
             },
           },
           axisLabel: {
             interval: 0,
-            color: "rgba(0, 0, 0, 0.6)",
+            color: activeTokens.textTertiary,
           },
           axisTick: {
             show: false,
@@ -99,7 +100,7 @@ export default function Chart6() {
             show: false,
           },
           axisLabel: {
-            color: "rgba(0, 0, 0, 0.6)",
+            color: activeTokens.textTertiary,
           },
           axisTick: {
             show: false,
@@ -113,7 +114,7 @@ export default function Chart6() {
             label: {
               show: true,
               position: "top",
-              color: "rgba(0, 0, 0, 0.8)",
+              color: activeTokens.textSecondary,
             },
             itemStyle: {
               borderRadius: [15, 15, 0, 0],

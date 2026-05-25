@@ -1,16 +1,17 @@
 import SeamVirtualScroll from "@/components/seamVirtualScroll";
+import type { TokenMap } from "../theme";
 
 import cityData from "../cityData";
 
 const keys = Object.keys(cityData);
 
-export default function Charts3() {
+export default function Charts3({ activeTokens }: { activeTokens: TokenMap }) {
   return (
     <SeamVirtualScroll
       rowHeight={50}
       styles={{
-        header: { color: "rgba(0, 0, 0, 0.6)" },
-        body: { color: "#000000" },
+        header: { color: activeTokens.textTertiary },
+        body: { color: activeTokens.textPrimary },
       }}
       column={[
         { title: "省份", dataIndex: "value1", noScroll: true },
@@ -46,7 +47,11 @@ export default function Charts3() {
             <span
               style={{
                 color:
-                  value4 > 90 ? "#fbdf88" : value4 > 60 ? "#ffa800" : "#ea580c",
+                  value4 > 90
+                    ? activeTokens.chartStatusGood
+                    : value4 > 60
+                      ? activeTokens.chartStatusWarn
+                      : activeTokens.chartStatusBad,
               }}>
               {value4
                 .toLocaleString("zh-CN", {
