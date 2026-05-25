@@ -1,12 +1,22 @@
-// 读取 GLB 文件并打印模型层级大纲
+// 读取 GLB 文件并打印模型层级大纲，结果同时保存为 txt 到模型目录
 // 用法: node scripts/printModelTree.mjs
 
-import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
+import { readFileSync, writeFileSync } from "fs";
+import { resolve, dirname, basename, extname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const glbPath = resolve(__dirname, "../public/model/glb/server_room.glb");
+const glbDir = dirname(glbPath);
+const glbBaseName = basename(glbPath, extname(glbPath)); // e.g. "server_room"
+const txtPath = resolve(glbDir, `${glbBaseName}.txt`);
+
+// ========== 收集输出的辅助 ==========
+const outputLines = [];
+function log(line = "") {
+  outputLines.push(line);
+  console.log(line);
+}
 
 // ========== 读取 GLB 二进制 ==========
 const buffer = readFileSync(glbPath);
@@ -15,13 +25,14 @@ const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLengt
 // GLB Header: magic(4) + version(4) + length(4) = 12 bytes
 const magic = dataView.getUint32(0, true); // little-endian
 if (magic !== 0x46546C67) {
-  console.error("❌ 不是有效的 GLB 文件 (magic number 不匹配)");
+  log("❌ 不是有效的 GLB 文件 (magic number 不匹配)");
   process.exit(1);
 }
 const version = dataView.getUint32(4, true);
 const totalLength = dataView.getUint32(8, true);
 
-console.log(`📦 GLB v${version}, 总大小: ${(totalLength / 1024).toFixed(1)} KB\n`);
+log(`📦 GLB v${version}, 总大小: ${(totalLength / 1024).toFixed(1)} KB`);
+log();
 
 // ========== 解析 Chunks ==========
 let offset = 12;
@@ -43,7 +54,7 @@ while (offset < totalLength) {
 }
 
 if (!jsonData) {
-  console.error("❌ 未找到 JSON chunk");
+  log("❌ 未找到 JSON chunk");
   process.exit(1);
 }
 
@@ -88,15 +99,17 @@ function printTree(nodeIdx, indent = "", isLast = true) {
     label += ` → ⚪ (Empty)`;
   }
 
-  console.log(prefix + label);
+  log(prefix + label);
 
   node.children.forEach((childIdx, i) => {
     printTree(childIdx, childIndent, i === node.children.length - 1);
   });
 }
 
-console.log("🏗️  模型层级大纲:\n");
-console.log(`   场景包含 ${rootNodes.length} 个根节点\n`);
+log("🏗️  模型层级大纲:");
+log();
+log(`   场景包含 ${rootNodes.length} 个根节点`);
+log();
 
 rootNodes.forEach((rootIdx, i) => {
   printTree(rootIdx, "", i === rootNodes.length - 1);
@@ -116,15 +129,21 @@ if (jsonData.meshes) {
   });
 }
 
-console.log(`\n📊 统计:`);
-console.log(`   节点总数: ${jsonData.nodes?.length ?? 0}`);
-console.log(`   Mesh 数: ${totalMeshes}`);
-console.log(`   三角面数: ${Math.round(totalTriangles).toLocaleString()}`);
+log();
+log(`📊 统计:`);
+log(`   节点总数: ${jsonData.nodes?.length ?? 0}`);
+log(`   Mesh 数: ${totalMeshes}`);
+log(`   三角面数: ${Math.round(totalTriangles).toLocaleString()}`);
 if (jsonData.materials) {
-  console.log(`   材质数: ${jsonData.materials.length}`);
+  log(`   材质数: ${jsonData.materials.length}`);
   jsonData.materials.forEach((mat, i) => {
-    console.log(`      [${i}] ${mat.name || "未命名"}`);
+    log(`      [${i}] ${mat.name || "未命名"}`);
   });
 } else {
-  console.log(`   材质数: 0 (无材质，白模)`);
+  log(`   材质数: 0 (无材质，白模)`);
 }
+
+// ========== 保存到 txt ==========
+writeFileSync(txtPath, outputLines.join("\n"), "utf-8");
+log();
+log(`✅ 结果已保存至: ${txtPath}`);
