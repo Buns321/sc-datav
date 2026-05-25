@@ -27,9 +27,9 @@ const Buttons = styled.div`
 const Button = styled.button<{ $active?: boolean }>`
   pointer-events: auto;
   position: relative;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(234, 88, 12, 0.2);
-  color: #d35400;
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--button-text);
   width: 50px;
   height: 50px;
   border-radius: 12px;
@@ -49,7 +49,7 @@ const Button = styled.button<{ $active?: boolean }>`
     height: 100%;
     background: linear-gradient(
       135deg,
-      rgba(234, 88, 12, 0.1) 0%,
+      var(--primary-container) 0%,
       transparent 100%
     );
     opacity: 0;
@@ -58,9 +58,9 @@ const Button = styled.button<{ $active?: boolean }>`
 
   &:hover {
     transform: translateY(-5px) scale(1.1);
-    border-color: #ff6715;
-    box-shadow: 0 0 15px rgba(255, 103, 21, 0.4);
-    color: #ff6715;
+    border-color: var(--button-hover-border);
+    box-shadow: 0 0 15px var(--button-hover-shadow);
+    color: var(--button-hover-text);
   }
 
   &:hover::before {
@@ -68,7 +68,7 @@ const Button = styled.button<{ $active?: boolean }>`
   }
 
   &.active:hover {
-    box-shadow: 0 6px 20px rgba(255, 103, 21, 0.7);
+    box-shadow: 0 6px 20px var(--shadow-strong);
   }
 
   ${(props) =>
@@ -76,10 +76,10 @@ const Button = styled.button<{ $active?: boolean }>`
     `
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, #ff6715 0%, #ff8c00 100%);
-        color: white !important;
+        background: linear-gradient(135deg, var(--button-active-bg-start) 0%, var(--button-active-bg-end) 100%);
+        color: var(--on-primary) !important;
         border: none;
-        box-shadow: 0 4px 15px rgba(255, 103, 21, 0.5);
+        box-shadow: 0 4px 15px var(--button-active-shadow);
         margin-bottom: 5px;
     `}
 `;
@@ -92,8 +92,8 @@ const Bg = () => (
     height="100%">
     <defs>
       <linearGradient id="grad-bottom" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#fff5e8" stopOpacity="0.5" />
-        <stop offset="100%" stopColor="#fff5e8" stopOpacity="1" />
+        <stop offset="0%" style={{ stopColor: "var(--footer-gradient-bg)", stopOpacity: 0.5 }} />
+        <stop offset="100%" style={{ stopColor: "var(--footer-gradient-bg)", stopOpacity: 1 }} />
       </linearGradient>
 
       <path id="pulse-path" d="M960,100 Q960,40 1300,40" />
@@ -108,16 +108,12 @@ const Bg = () => (
     <path
       d="M0,100 Q320,100 470,100 Q620,80 720,60 Q960,10 1200,60 Q1300,80 1450,100 Q1600,100 1920,100"
       fill="none"
-      stroke="#ff6715"
-      strokeWidth="1"
-      strokeOpacity="0.4"></path>
+      style={{ stroke: "var(--primary-hover)", strokeWidth: 1, strokeOpacity: 0.4 }}></path>
 
     <path
       d="M720,60 Q960,10 1200,60"
       fill="none"
-      stroke="#ff6715"
-      strokeWidth="2"
-      strokeLinecap="round"></path>
+      style={{ stroke: "var(--primary-hover)", strokeWidth: 2, strokeLinecap: "round" }}></path>
   </svg>
 );
 

@@ -3,6 +3,7 @@ import styled from "styled-components";
 import useMoveTo from "@/hooks/useMoveTo";
 import AutoFit from "@/components/autoFit";
 import { useConfigStore } from "../stores";
+import type { TokenMap } from "../theme";
 
 import Headder from "./headder";
 import Footer from "./footer";
@@ -25,11 +26,11 @@ const GridWrapper = styled.div`
 
 const Card = styled.div`
   position: relative;
-  background: rgba(255, 245, 232, 0.65);
-  border: 1px solid rgba(255, 145, 0, 0.3);
-  position: relative;
+  background: var(--card-glass-bg);
+  border: 1px solid var(--outline);
   padding: 15px;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -43,8 +44,8 @@ const Card = styled.div`
     left: -1px;
     width: 10px;
     height: 10px;
-    border-top: 2px solid #ea580c;
-    border-left: 2px solid #ea580c;
+    border-top: 2px solid var(--primary);
+    border-left: 2px solid var(--primary);
     transition: all 0.3s ease;
     pointer-events: none;
   }
@@ -56,8 +57,8 @@ const Card = styled.div`
     right: -1px;
     width: 10px;
     height: 10px;
-    border-bottom: 2px solid #ea580c;
-    border-right: 2px solid #ea580c;
+    border-bottom: 2px solid var(--primary);
+    border-right: 2px solid var(--primary);
     transition: all 0.3s ease;
     pointer-events: none;
   }
@@ -74,20 +75,20 @@ const CardTitle = styled.div`
   font-size: 18px;
   margin-bottom: 10px;
   padding-left: 10px;
-  border-left: 4px solid #fdb961;
+  border-left: 4px solid var(--secondary-variant);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #5a4a42;
+  color: var(--text-heading);
 
   span {
     font-size: 10px;
-    color: rgba(0, 0, 0, 0.4);
+    color: var(--text-disabled);
     font-weight: normal;
   }
 `;
 
-export default function Content() {
+export default function Content({ activeTokens }: { activeTokens: TokenMap }) {
   const topBox = useMoveTo("toBottom", 0.6);
   const leftBox = useMoveTo("toRight", 0.8, 0.5);
   const leftBox1 = useMoveTo("toRight", 0.8, 0.6);
@@ -167,37 +168,37 @@ export default function Content() {
           <CardTitle>
             2025年规模指标分析<span>INDICATOR ANALYSIS</span>
           </CardTitle>
-          <Chart1 />
+          <Chart1 activeTokens={activeTokens} />
         </Card>
         <Card ref={leftBox1.ref} style={{ gridArea: "3 / 1 / 5 / 2" }}>
           <CardTitle>
             企业税收分析<span>TAX ANALYSIS</span>
           </CardTitle>
-          <Chart2 />
+          <Chart2 activeTokens={activeTokens} />
         </Card>
         <Card ref={leftBox2.ref} style={{ gridArea: "5 / 1 / 7 / 2" }}>
           <CardTitle>
             行政处罚信息<span>PENALTY INFORMATION</span>
           </CardTitle>
-          <Chart3 />
+          <Chart3 activeTokens={activeTokens} />
         </Card>
         <Card ref={rightBox.ref} style={{ gridArea: "1 / 4 / 3 / 5" }}>
           <CardTitle>
             企业收益总数统计<span>REVENUE STATISTICS</span>
           </CardTitle>
-          <Chart4 />
+          <Chart4 activeTokens={activeTokens} />
         </Card>
         <Card ref={rightBox1.ref} style={{ gridArea: "3 / 4 / 5 / 5" }}>
           <CardTitle>
             企业能耗分析<span>ENERGY CONSUMPTION ANALYSIS</span>
           </CardTitle>
-          <Chart5 />
+          <Chart5 activeTokens={activeTokens} />
         </Card>
         <Card ref={rightBox2.ref} style={{ gridArea: "5 / 4 / 7 / 5" }}>
           <CardTitle>
             企业税收分析<span>TAX ANALYSIS</span>
           </CardTitle>
-          <Chart6 />
+          <Chart6 activeTokens={activeTokens} />
         </Card>
       </GridWrapper>
       <Footer ref={bottomBox.ref} />

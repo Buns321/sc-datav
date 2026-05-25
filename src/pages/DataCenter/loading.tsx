@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { lightTokens } from "./theme";
 
 const Wrapper = styled.div`
   width: 100vw;
@@ -6,7 +7,7 @@ const Wrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fff5e8;
+  background-color: var(--surface, ${lightTokens.surface});
 `;
 
 export default function Loading() {
@@ -19,14 +20,14 @@ export default function Loading() {
         xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="waveGradWarm" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#e8b10a" stopOpacity="0" />
-            <stop offset="50%" stopColor="#e8b10a" stopOpacity="1" />
-            <stop offset="100%" stopColor="#e8b10a" stopOpacity="0" />
+            <stop offset="0%" stopColor={lightTokens.loadingWave} stopOpacity="0" />
+            <stop offset="50%" stopColor={lightTokens.loadingWave} stopOpacity="1" />
+            <stop offset="100%" stopColor={lightTokens.loadingWave} stopOpacity="0" />
           </linearGradient>
           <linearGradient id="waveGradWarm1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#ea580c" stopOpacity="0" />
-            <stop offset="50%" stopColor="#ea580c" stopOpacity="1" />
-            <stop offset="100%" stopColor="#ea580c" stopOpacity="0" />
+            <stop offset="0%" stopColor={lightTokens.primary} stopOpacity="0" />
+            <stop offset="50%" stopColor={lightTokens.primary} stopOpacity="1" />
+            <stop offset="100%" stopColor={lightTokens.primary} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path
