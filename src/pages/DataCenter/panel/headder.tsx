@@ -144,7 +144,7 @@ export default function Headder(props: ComponentProps<typeof TitleWrapper>) {
     <TitleWrapper {...props}>
       <Bg />
       <Title>四川省智慧城市数据大脑</Title>
-      <Github href="https://github.com/knight-L/datav" target="_blank" />
+      <Github href="https://github.com/Buns321/sc-datav" target="_blank" />
     </TitleWrapper>
   );
 }
