@@ -3,14 +3,14 @@ import { useImperativeHandle, useState, type Ref } from "react";
 import styled from "styled-components";
 
 const TooltipBox = styled.div`
-  background: rgba(255, 245, 232, 0.7);
+  background: var(--card-glass-bg);
   backdrop-filter: blur(10px);
   border-radius: 8px;
   padding: 12px 16px;
-  color: #656565;
+  color: var(--text-secondary);
   font-size: 12px;
   pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--outline-variant);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   min-width: 120px;
 `;
@@ -18,7 +18,7 @@ const TooltipBox = styled.div`
 const CityName = styled.div`
   font-weight: bold;
   margin-bottom: 8px;
-  color: #ea580c;
+  color: var(--primary);
 `;
 
 const DataItem = styled.div`

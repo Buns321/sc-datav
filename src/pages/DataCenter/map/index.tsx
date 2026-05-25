@@ -1,9 +1,12 @@
 import styled from "styled-components";
+import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import Lights from "./lights";
 import Scene from "./scene";
 import { CAMERA_INITIAL } from "./camera";
+import { useConfigStore } from "../stores";
+import { generateTokens, lightTokens, darkTokens } from "../theme";
 
 const CanvasWrapper = styled.div`
   position: absolute;
@@ -13,6 +16,17 @@ const CanvasWrapper = styled.div`
 `;
 
 export default function Index() {
+  const seedColor = useConfigStore((s) => s.seedColor);
+  const themeMode = useConfigStore((s) => s.themeMode);
+
+  const bgColor = useMemo(() => {
+    if (seedColor) {
+      const { light, dark } = generateTokens(seedColor);
+      return (themeMode === "dark" ? dark : light).surface;
+    }
+    return (themeMode === "dark" ? darkTokens : lightTokens).surface;
+  }, [seedColor, themeMode]);
+
   return (
     <CanvasWrapper>
       <Canvas
@@ -20,7 +34,7 @@ export default function Index() {
         shadows
         camera={{ position: [CAMERA_INITIAL.x, CAMERA_INITIAL.y, CAMERA_INITIAL.z], fov: 50, far: 2000, near: 1 }}
         dpr={[1, 2]}>
-        <color attach="background" args={["#fff5e8"]} />
+        <color attach="background" args={[bgColor]} />
         <Lights />
 
         <Scene />

@@ -5,9 +5,9 @@ const Label = styled(Html)`
   pointer-events: none;
   width: max-content;
   display: flex;
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid currentColor;
-  color: #fdb961;
+  color: var(--secondary-variant);
   font-size: 14px;
   padding-inline: 4px;
   border-radius: 4px;

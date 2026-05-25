@@ -11,6 +11,7 @@ import {
   type Mesh,
 } from "three";
 import { useConfigStore } from "../stores";
+import { generateTokens, lightTokens, darkTokens } from "../theme";
 import loadTexture from "../helpers/loadTexture";
 
 import guangquan01 from "@/assets/guangquan01.png";
@@ -39,12 +40,33 @@ export default function Bar(props: CityBarProps) {
     position,
     value = Math.floor(Math.random() * 1000) + 100,
     children,
-    uColor1 = new Color(0xfbdf88),
-    uColor2 = new Color(0xea580c),
+    uColor1: _uColor1,
+    uColor2: _uColor2,
     dir = "y",
     factor = 5,
     max = 1000,
   } = props;
+
+  // 动态默认色：当调用方未传入 uColor1/uColor2 时，从当前主题取
+  const seedColor = useConfigStore((s) => s.seedColor);
+  const themeMode = useConfigStore((s) => s.themeMode);
+  const defaultColor1 = useMemo(() => {
+    if (seedColor) {
+      const { light, dark } = generateTokens(seedColor);
+      return new Color((themeMode === "dark" ? dark : light).secondary);
+    }
+    return new Color((themeMode === "dark" ? darkTokens : lightTokens).secondary);
+  }, [seedColor, themeMode]);
+  const defaultColor2 = useMemo(() => {
+    if (seedColor) {
+      const { light, dark } = generateTokens(seedColor);
+      return new Color((themeMode === "dark" ? dark : light).primary);
+    }
+    return new Color((themeMode === "dark" ? darkTokens : lightTokens).primary);
+  }, [seedColor, themeMode]);
+
+  const uColor1 = _uColor1 ?? defaultColor1;
+  const uColor2 = _uColor2 ?? defaultColor2;
   let dirMap = { x: 1.0, y: 2.0, z: 3.0 };
 
   const quanRef = useRef<Mesh>(null!);
