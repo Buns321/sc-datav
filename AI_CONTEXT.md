@@ -6,6 +6,14 @@
 
 ---
 
+## 0. AI 行为规则
+
+- **路线图管理**：当用户提出新功能想法、改进建议或报告任务完成时，**建议用户切换到 Roadmap agent** 来记录。Roadmap agent 定义在 `.github/agents/roadmap.agent.md`，它维护 `ROADMAP.md`。
+- **不要手动编辑 ROADMAP.md**：让 Roadmap agent 来做，它知道格式和去重规则。
+- **编码前先查路线图**：接手新任务时，快速扫一眼 `ROADMAP.md` 看看有没有相关的计划或依赖。
+
+---
+
 ## 1. 项目身份
 
 基于 **Three.js + React 19 + ECharts** 的 3D 数据可视化大屏项目。原仓库包含 4 个 Demo 展示不同 3D 地图效果，当前在 DataCenter 页面进行功能开发和组件解耦实验。
