@@ -1,9 +1,10 @@
 import styled from "styled-components";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import Lights from "./lights";
 import Scene from "./scene";
+import CameraAutoRecenter from "./CameraAutoRecenter";
 import { CAMERA_INITIAL } from "./camera";
 import { useConfigStore } from "../stores";
 import { generateTokens, lightTokens, darkTokens } from "../theme";
@@ -18,6 +19,9 @@ const CanvasWrapper = styled.div`
 export default function Index() {
   const seedColor = useConfigStore((s) => s.seedColor);
   const themeMode = useConfigStore((s) => s.themeMode);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const controlsRef = useRef<any>(null);
 
   const bgColor = useMemo(() => {
     if (seedColor) {
@@ -39,6 +43,8 @@ export default function Index() {
 
         <Scene />
 
+        <CameraAutoRecenter controlsRef={controlsRef} />
+
         <ContactShadows
           opacity={0.5}
           scale={300}
@@ -48,6 +54,7 @@ export default function Index() {
         />
 
         <OrbitControls
+          ref={controlsRef}
           enablePan
           enableZoom
           enableRotate

@@ -24,6 +24,7 @@ export const CAMERA_END = {
 
 /** 入场动画时长（秒） */
 export const REVEAL_DURATION = {
-  sweep: 3,    // 相机绕侧面
-  home: 3,     // 相机回正面
+  sweep: 3,       // 相机绕侧面
+  home: 3,        // 相机回正面
+  recenter: 5,    // 用户停止交互后，相机自动回正的冷却时间（秒）
 } as const;
