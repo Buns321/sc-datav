@@ -1,0 +1,39 @@
+# ============================================================================
+# pyproject.toml — Python 项目配置文件
+#
+# 这个文件类似前端的 package.json，告诉 Python：
+# 1. 项目叫什么名字、什么版本
+# 2. 需要安装哪些依赖包（类似 dependencies）
+# 3. Python 版本要求（类似 package.json 的 engines 字段）
+# ============================================================================
+
+[project]
+name = "sc-datav-server"
+version = "0.1.0"
+description = "sc-datav 数据可视化大屏的后端服务——接收上位机 TCP 报文并推送给前端"
+requires-python = ">=3.12"
+
+# 🔧 dependencies 里的每个包的作用（写给嵌入式开发者的说明）：
+dependencies = [
+    "fastapi>=0.115",
+    # FastAPI = Python 的 Web 框架，类似 Node.js 的 Express
+    # 提供路由、WebSocket、请求验证等功能
+
+    "uvicorn[standard]>=0.34",
+    # uvicorn = ASGI 服务器，类似前端的 Vite dev server
+    # 用来"跑"FastAPI 应用，接收网络请求
+
+    "pydantic>=2.0",
+    # Pydantic = 数据校验库，类似 TypeScript 的 interface + 运行时类型检查
+    # 当你收到一条 JSON 数据，Pydantic 会自动验证格式对不对
+
+    "python-dotenv>=1.0",
+    # python-dotenv = 读取 .env 文件中的环境变量
+    # 类似前端的 import.meta.env.VITE_XXX
+]
+
+# ============================================================================
+# 可选：开发依赖（后续需要时再启用）
+# ============================================================================
+# [project.optional-dependencies]
+# dev = ["pytest>=8.0", "ruff>=0.5"]
