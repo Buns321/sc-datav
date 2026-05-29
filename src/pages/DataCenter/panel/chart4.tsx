@@ -3,8 +3,18 @@ import { LineChart } from "echarts/charts";
 import styled from "styled-components";
 import NumberAnimation from "@/components/numberAnimation";
 import type { TokenMap } from "../theme";
+import { useDataStore } from "../stores/dataStore";
 
-const data = [270, 400, 380, 420, 300, 410, 400, 330, 210, 290];
+/**
+ * 默认数据 —— 当后端未连接或数据还没到时，使用这个降级值。
+ * 保证页面不会因为缺少数据而崩溃。
+ * 数据值与前端的原始硬编码一致，也与后端 chart4_data.py 的默认值一致。
+ */
+const DEFAULT_DATA = {
+  lineData: [270, 400, 380, 420, 300, 410, 400, 330, 210, 290],
+  totalRevenue: 99608,
+  enterpriseCount: 7792,
+};
 
 const Wrapper = styled.div`
   width: 100%;
@@ -70,6 +80,22 @@ const CompanyIcon = styled.svg.attrs({
 `;
 
 export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
+  /**
+   * 从 dataStore 读取 Chart4 数据
+   *
+   * 🔧 数据流：
+   *   上位机 → TCP → 后端 → WebSocket → WSClient → dataStore → 这里
+   *
+   * 如果后端还没推送数据（chart4Data 为 null），
+   * 使用 DEFAULT_DATA 作为降级值，保证页面正常显示。
+   */
+  const chart4Data = useDataStore((s) => s.chart4);
+
+  // 🔧 降级策略：后端有数据用后端数据，否则用默认值
+  const lineData = chart4Data?.line_data ?? DEFAULT_DATA.lineData;
+  const totalRevenue = chart4Data?.total_revenue ?? DEFAULT_DATA.totalRevenue;
+  const enterpriseCount = chart4Data?.enterprise_count ?? DEFAULT_DATA.enterpriseCount;
+
   const colors = activeTokens.chartGradient;
   return (
     <Wrapper>
@@ -99,7 +125,7 @@ export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
           calculable: true,
           xAxis: {
             show: false,
-            data: data,
+            data: lineData,
             boundaryGap: false,
           },
           yAxis: {
@@ -127,14 +153,14 @@ export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
                 global: false,
               },
             },
-            data: data,
+            data: lineData,
           },
         }}
       />
       <Statistics>
         <StatisticsTitle>收益总计</StatisticsTitle>
         <StatisticsNumber
-          value={99608}
+          value={totalRevenue}
           options={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
         />
       </Statistics>
@@ -143,7 +169,7 @@ export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
           <CompanyIcon />
           企业数量
           <Statistics1Number
-            value={7792}
+            value={enterpriseCount}
             options={{ maximumFractionDigits: 0 }}
           />
         </Statistics1>
