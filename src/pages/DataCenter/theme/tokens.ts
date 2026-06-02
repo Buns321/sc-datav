@@ -6,6 +6,7 @@
  */
 
 import { generateSchemes, DEFAULT_SEED, type RawTokens } from "./palette";
+import { Hct, argbFromHex, hexFromArgb } from "@material/material-color-utilities";
 
 // ---------------------------------------------------------------------------
 // 类型
@@ -85,69 +86,40 @@ export interface TokenMap {
 }
 
 // ---------------------------------------------------------------------------
-// HSL 工具（用于生成辉光 / 阴影等 CSS 无法直接从 hex 推导的颜色）
-// ---------------------------------------------------------------------------
-
-/** hex → { h, s, l } (0-360, 0-100, 0-100) */
-function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  let r = 0, g = 0, b = 0;
-  const v = hex.replace("#", "");
-  if (v.length === 3) {
-    r = parseInt(v[0] + v[0], 16);
-    g = parseInt(v[1] + v[1], 16);
-    b = parseInt(v[2] + v[2], 16);
-  } else {
-    r = parseInt(v.substring(0, 2), 16);
-    g = parseInt(v.substring(2, 4), 16);
-    b = parseInt(v.substring(4, 6), 16);
-  }
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
-    }
-  }
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-}
-
-/** hsl → hex */
-function hslToHex(h: number, s: number, l: number): string {
-  s /= 100; l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * c).toString(16).padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
-
-// ---------------------------------------------------------------------------
-// 令牌构建
+// HCT 辅助（用于生成辉光 / 阴影等 CSS 无法直接从 hex 推导的颜色）
 // ---------------------------------------------------------------------------
 
 /**
  * 从 RawTokens 构建面向组件的 TokenMap
  *
  * 大部分令牌直接映射 Material Scheme 的语义角色；
- * 辉光 / 阴影 / 按钮渐变等通过 primary 色相动态推算。
+ * 辉光 / 阴影 / 按钮渐变等通过 primary 的 HCT 色相动态推算。
  */
 export function createTokenMap(raw: RawTokens): TokenMap {
-  const hsl = hexToHsl(raw.primary);
+  const primaryHct = Hct.fromInt(argbFromHex(raw.primary));
+  const bgHct = Hct.fromInt(argbFromHex(raw.background));
 
-  // 动态推算 primary 色系变体（保证跨种子色一致可用）
-  const primaryHover = hslToHex(hsl.h, Math.min(hsl.s + 10, 95), Math.min(hsl.l + 8, 95));
-  const primaryActive = hslToHex(hsl.h, hsl.s, Math.max(hsl.l - 5, 10));
-  const primaryGlow = `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.8)`;
+  // Hover：略高的色度和明度
+  const hoverHct = Hct.from(
+    primaryHct.hue,
+    Math.min(primaryHct.chroma + 8, 130),
+    Math.min(primaryHct.tone + 8, 95),
+  );
+  const primaryHover = hexFromArgb(hoverHct.toInt());
+
+  // Active：相同色度，略低的明度
+  const activeHct = Hct.from(primaryHct.hue, primaryHct.chroma, Math.max(primaryHct.tone - 5, 10));
+  const primaryActive = hexFromArgb(activeHct.toInt());
+
+  // 辉光 / 阴影用 hsla（借用 HCT 的 hue/tone，chroma 映射为近似饱和度）
+  const approxSat = Math.min(Math.round(primaryHct.chroma * 1.5), 100);
+  const primaryGlow = `hsla(${primaryHct.hue}, ${approxSat}%, ${primaryHct.tone}%, 0.8)`;
   const secondaryDim = `hsla(${raw.primaryHue + 30}, 60%, 60%, 0.3)`;
-  const accentDim = `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.6)`;
+  const accentDim = `hsla(${primaryHct.hue}, ${approxSat}%, ${primaryHct.tone}%, 0.6)`;
+
+  // Accent：略高的明度
+  const accentHct = Hct.from(primaryHct.hue, primaryHct.chroma, Math.min(primaryHct.tone + 12, 95));
+  const accent = hexFromArgb(accentHct.toInt());
 
   return {
     // Surface — 背景层级
@@ -156,7 +128,7 @@ export function createTokenMap(raw: RawTokens): TokenMap {
     surfaceOverlay: raw.surfaceVariant,
     // 毛玻璃：亮色主题用白玻璃，暗色主题用黑玻璃（根据背景亮度自动判定）
     cardGlassBg:
-      hexToHsl(raw.background).l > 50
+      bgHct.tone > 50
         ? "rgba(255, 255, 255, 0.7)"
         : "rgba(15, 15, 18, 0.55)",
 
@@ -175,7 +147,7 @@ export function createTokenMap(raw: RawTokens): TokenMap {
     secondaryDim,
 
     // Accent — 强调
-    accent: hslToHex(hsl.h, hsl.s, Math.min(hsl.l + 12, 95)),
+    accent,
     accentDim,
 
     // Outline — 边框
@@ -191,8 +163,8 @@ export function createTokenMap(raw: RawTokens): TokenMap {
     textSubtitle: accentDim,
 
     // Shadow
-    shadow: `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.4)`,
-    shadowStrong: `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.5)`,
+    shadow: `hsla(${primaryHct.hue}, ${approxSat}%, ${primaryHct.tone}%, 0.4)`,
+    shadowStrong: `hsla(${primaryHct.hue}, ${approxSat}%, ${primaryHct.tone}%, 0.5)`,
 
     // Button
     buttonBg: raw.surface,
@@ -200,29 +172,29 @@ export function createTokenMap(raw: RawTokens): TokenMap {
     buttonBorder: raw.outlineVariant,
     buttonHoverBorder: primaryHover,
     buttonHoverText: primaryHover,
-    buttonHoverShadow: `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.4)`,
+    buttonHoverShadow: `hsla(${primaryHct.hue}, ${approxSat}%, ${primaryHct.tone}%, 0.4)`,
     buttonActiveBgStart: raw.primary,
     buttonActiveBgEnd: primaryActive,
-    buttonActiveShadow: `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.5)`,
+    buttonActiveShadow: `hsla(${primaryHct.hue}, ${approxSat}%, ${primaryHct.tone}%, 0.5)`,
 
     // Header
     headerGradientStart: raw.primary,
-    headerGradientEnd: hslToHex(hsl.h, hsl.s, Math.min(hsl.l + 12, 95)),
+    headerGradientEnd: accent,
     headerTitleShadow: primaryGlow,
 
     // Footer
     footerGradientBg: raw.background,
 
-    // Chart
+    // Chart — 使用 HCT 生成色阶
     chartGradient: [raw.secondary, raw.primary] as const,
     chartSeries: [
       raw.secondary,
-      hslToHex(raw.secondaryHue, 70, 55),
-      hslToHex(hsl.h, 80, 45),
-      hslToHex(hsl.h, 85, 35),
+      hexFromArgb(Hct.from(raw.secondaryHue, 50, 55).toInt()),
+      hexFromArgb(Hct.from(primaryHct.hue, 60, 45).toInt()),
+      hexFromArgb(Hct.from(primaryHct.hue, 65, 35).toInt()),
     ] as const,
     chartStatusGood: raw.secondary,
-    chartStatusWarn: hslToHex(raw.secondaryHue, 70, 55),
+    chartStatusWarn: hexFromArgb(Hct.from(raw.secondaryHue, 50, 55).toInt()),
     chartStatusBad: raw.primary,
 
     // Loading

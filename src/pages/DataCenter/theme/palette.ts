@@ -1,13 +1,19 @@
 /**
- * 调色板生成器 —— Monet / Material You 风格（自实现，零外部依赖）
+ * 调色板生成器 —— 基于 Google 官方 @material/material-color-utilities
  *
- * 种子色 → HSL 色阶 → 双份语义色方案 (亮色 / 暗色)
- * Secondary 色相 = Primary 色相 + 30° 自动偏移
- *
- * 算法参考：
- *   Material Design 3 的 HCT 色彩空间在此简化为 HSL + 色调映射表，
- *   确保亮/暗主题下各语义令牌具有足够的对比度。
+ * 使用 HCT（色相/色度/明度）色彩空间（基于 CAM16 色貌模型），
+ * 替代原先的 HSL 模拟方案，生成符合 Material Design 3 标准的色板。
  */
+
+import {
+  argbFromHex,
+  hexFromArgb,
+  Hct,
+  SchemeContent,
+  MaterialDynamicColors,
+  type DynamicColor,
+  type DynamicScheme,
+} from "@material/material-color-utilities";
 
 // ---------------------------------------------------------------------------
 // 类型
@@ -51,182 +57,109 @@ export interface RawTokens {
 }
 
 // ---------------------------------------------------------------------------
-// HSL 工具
+// Material DynamicColors 工具
 // ---------------------------------------------------------------------------
 
-interface HSL {
-  h: number; // 0-360
-  s: number; // 0-100
-  l: number; // 0-100
-}
+/** 单例 —— 缓存 DynamicColor 实例，避免反复构造 */
+const mdc = new MaterialDynamicColors();
 
-/** hex → HSL */
-function hexToHsl(hex: string): HSL {
-  let r = 0, g = 0, b = 0;
-  const v = hex.replace("#", "");
-  if (v.length === 3) {
-    r = parseInt(v[0] + v[0], 16);
-    g = parseInt(v[1] + v[1], 16);
-    b = parseInt(v[2] + v[2], 16);
-  } else {
-    r = parseInt(v.substring(0, 2), 16);
-    g = parseInt(v.substring(2, 4), 16);
-    b = parseInt(v.substring(4, 6), 16);
-  }
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
-    }
-  }
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-}
-
-/** HSL → hex */
-function hslToHex(h: number, s: number, l: number): string {
-  s /= 100; l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * c).toString(16).padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
+/** 解析 DynamicColor → hex 字符串 */
+function resolve(dc: DynamicColor, scheme: DynamicScheme): string {
+  return hexFromArgb(dc.getArgb(scheme));
 }
 
 // ---------------------------------------------------------------------------
-// 色调映射逻辑
-//
-// Material You 的核心思想：
-//   - 同色相，不同 Tone (亮度) → 不同语义角色
-//   - 亮色主题：Tone 高 (near-white) 用于背景，Tone 低 (near-black) 用于文字
-//   - 暗色主题：Tone 低 用于背景，Tone 高 用于文字
-//   - 色度 (chroma/saturation) 也随 Tone 变化：低 Tone/高 Tone 降低色度避免刺眼
-// ---------------------------------------------------------------------------
-
-/** 根据色相、色度和 tone 生成 hex 颜色 */
-function tonalColor(hue: number, chroma: number, tone: number): string {
-  // tone 0 = 黑, tone 100 = 白 (与 HCT 一致，与 HSL L 同向)
-  const lightness = tone;
-  // 色度在中间 tone 时最大，两端衰减
-  const saturation = chroma * (1 - Math.abs(tone - 50) / 50) * 0.7;
-  return hslToHex(hue, Math.min(saturation, 100), Math.max(0, Math.min(100, lightness)));
-}
-
-// ---------------------------------------------------------------------------
-// 核心生成逻辑
+// 核心生成逻辑（使用官方 HCT 色彩空间）
 // ---------------------------------------------------------------------------
 
 /**
  * 从种子色生成亮/暗两套完整色方案
  *
- * @param seedHex 种子色 (e.g. "#ea580c" 暖橙, "#4CAF50" 绿)
+ * @param seedHex 种子色 (e.g. "#76d6ff" 天蓝, "#ea580c" 暖橙)
  */
 export function generateSchemes(seedHex: string): {
   light: RawTokens;
   dark: RawTokens;
 } {
-  // ---- 1. 解析种子色 ----
-  const seed = hexToHsl(seedHex);
-  const primaryHue = seed.h;
-  const primaryChroma = Math.max(seed.s * 1.1, 48);
+  const sourceArgb = argbFromHex(seedHex);
+  const sourceHct = Hct.fromInt(sourceArgb);
 
-  // ---- 2. Secondary 色相偏移 ----
-  const secondaryHue = (primaryHue + 30) % 360;
-  const secondaryChroma = 40;
+  // SchemeContent：种子色作为 primaryContainer，适合内容主导的场景
+  const lightScheme = new SchemeContent(sourceHct, false, 0);
+  const darkScheme = new SchemeContent(sourceHct, true, 0);
 
-  // ---- 3. Tertiary 色相 ----
-  const tertiaryHue = (primaryHue + 60) % 360;
-  const tertiaryChroma = 30;
+  // 便捷解析器
+  const L = (dc: DynamicColor) => resolve(dc, lightScheme);
+  const D = (dc: DynamicColor) => resolve(dc, darkScheme);
 
-  // ---- 4. 错误色（红色调） ----
-  const errorHue = 4;
-  const errorChroma = 60;
-
-  // ---- 5. 中性色色相 = 主色相（保留暖/冷倾向） ----
-  const neutralChroma = 4;
-
-  // ---- 6. 便捷函数 ----
-  const c = (h: number, chroma: number, tone: number) =>
-    tonalColor(h, chroma, tone);
-
-  // ---- 7. 亮色主题 ----
   const light: RawTokens = {
-    primary: c(primaryHue, primaryChroma, 40),
-    onPrimary: c(primaryHue, 15, 100),
-    primaryContainer: c(primaryHue, primaryChroma * 0.5, 90),
-    onPrimaryContainer: c(primaryHue, primaryChroma * 0.5, 10),
-    secondary: c(secondaryHue, secondaryChroma, 40),
-    onSecondary: c(secondaryHue, 15, 100),
-    secondaryContainer: c(secondaryHue, secondaryChroma * 0.5, 90),
-    onSecondaryContainer: c(secondaryHue, secondaryChroma * 0.5, 10),
-    tertiary: c(tertiaryHue, tertiaryChroma, 40),
-    onTertiary: c(tertiaryHue, 15, 100),
-    tertiaryContainer: c(tertiaryHue, tertiaryChroma * 0.5, 90),
-    onTertiaryContainer: c(tertiaryHue, tertiaryChroma * 0.5, 10),
-    error: c(errorHue, errorChroma, 40),
-    onError: c(errorHue, 15, 100),
-    errorContainer: c(errorHue, errorChroma * 0.5, 90),
-    onErrorContainer: c(errorHue, errorChroma * 0.5, 10),
-    background: c(primaryHue, neutralChroma, 98),
-    onBackground: c(primaryHue, neutralChroma, 10),
-    surface: c(primaryHue, neutralChroma, 96),
-    onSurface: c(primaryHue, neutralChroma, 10),
-    surfaceVariant: c(primaryHue, neutralChroma * 1.5, 90),
-    onSurfaceVariant: c(primaryHue, neutralChroma * 1.5, 30),
-    outline: c(primaryHue, neutralChroma * 1.5, 50),
-    outlineVariant: c(primaryHue, neutralChroma, 80),
-    shadow: "#000000",
-    scrim: "#000000",
-    inverseSurface: c(primaryHue, neutralChroma, 20),
-    inverseOnSurface: c(primaryHue, neutralChroma, 95),
-    inversePrimary: c(primaryHue, primaryChroma * 0.6, 80),
-    primaryHue,
-    primaryChroma,
-    secondaryHue,
+    primary: L(mdc.primary()),
+    onPrimary: L(mdc.onPrimary()),
+    primaryContainer: L(mdc.primaryContainer()),
+    onPrimaryContainer: L(mdc.onPrimaryContainer()),
+    secondary: L(mdc.secondary()),
+    onSecondary: L(mdc.onSecondary()),
+    secondaryContainer: L(mdc.secondaryContainer()),
+    onSecondaryContainer: L(mdc.onSecondaryContainer()),
+    tertiary: L(mdc.tertiary()),
+    onTertiary: L(mdc.onTertiary()),
+    tertiaryContainer: L(mdc.tertiaryContainer()),
+    onTertiaryContainer: L(mdc.onTertiaryContainer()),
+    error: L(mdc.error()),
+    onError: L(mdc.onError()),
+    errorContainer: L(mdc.errorContainer()),
+    onErrorContainer: L(mdc.onErrorContainer()),
+    background: L(mdc.background()),
+    onBackground: L(mdc.onBackground()),
+    surface: L(mdc.surface()),
+    onSurface: L(mdc.onSurface()),
+    surfaceVariant: L(mdc.surfaceVariant()),
+    onSurfaceVariant: L(mdc.onSurfaceVariant()),
+    outline: L(mdc.outline()),
+    outlineVariant: L(mdc.outlineVariant()),
+    shadow: L(mdc.shadow()),
+    scrim: L(mdc.scrim()),
+    inverseSurface: L(mdc.inverseSurface()),
+    inverseOnSurface: L(mdc.inverseOnSurface()),
+    inversePrimary: L(mdc.inversePrimary()),
+    primaryHue: sourceHct.hue,
+    primaryChroma: sourceHct.chroma,
+    secondaryHue: lightScheme.secondaryPalette.hue,
   };
 
-  // ---- 8. 暗色主题 ----
   const dark: RawTokens = {
-    primary: c(primaryHue, primaryChroma * 0.7, 80),
-    onPrimary: c(primaryHue, primaryChroma * 0.4, 20),
-    primaryContainer: c(primaryHue, primaryChroma * 0.4, 30),
-    onPrimaryContainer: c(primaryHue, primaryChroma * 0.4, 90),
-    secondary: c(secondaryHue, secondaryChroma * 0.7, 80),
-    onSecondary: c(secondaryHue, secondaryChroma * 0.4, 20),
-    secondaryContainer: c(secondaryHue, secondaryChroma * 0.4, 30),
-    onSecondaryContainer: c(secondaryHue, secondaryChroma * 0.4, 90),
-    tertiary: c(tertiaryHue, tertiaryChroma * 0.7, 80),
-    onTertiary: c(tertiaryHue, tertiaryChroma * 0.4, 20),
-    tertiaryContainer: c(tertiaryHue, tertiaryChroma * 0.4, 30),
-    onTertiaryContainer: c(tertiaryHue, tertiaryChroma * 0.4, 90),
-    error: c(errorHue, errorChroma * 0.7, 80),
-    onError: c(errorHue, errorChroma * 0.4, 20),
-    errorContainer: c(errorHue, errorChroma * 0.4, 30),
-    onErrorContainer: c(errorHue, errorChroma * 0.4, 90),
-    background: c(primaryHue, neutralChroma, 6),
-    onBackground: c(primaryHue, neutralChroma, 90),
-    surface: c(primaryHue, neutralChroma, 10),
-    onSurface: c(primaryHue, neutralChroma, 90),
-    surfaceVariant: c(primaryHue, neutralChroma * 1.5, 30),
-    onSurfaceVariant: c(primaryHue, neutralChroma * 1.5, 80),
-    outline: c(primaryHue, neutralChroma * 1.5, 60),
-    outlineVariant: c(primaryHue, neutralChroma, 30),
-    shadow: "#000000",
-    scrim: "#000000",
-    inverseSurface: c(primaryHue, neutralChroma, 90),
-    inverseOnSurface: c(primaryHue, neutralChroma, 20),
-    inversePrimary: c(primaryHue, primaryChroma * 0.5, 40),
-    primaryHue,
-    primaryChroma,
-    secondaryHue,
+    primary: D(mdc.primary()),
+    onPrimary: D(mdc.onPrimary()),
+    primaryContainer: D(mdc.primaryContainer()),
+    onPrimaryContainer: D(mdc.onPrimaryContainer()),
+    secondary: D(mdc.secondary()),
+    onSecondary: D(mdc.onSecondary()),
+    secondaryContainer: D(mdc.secondaryContainer()),
+    onSecondaryContainer: D(mdc.onSecondaryContainer()),
+    tertiary: D(mdc.tertiary()),
+    onTertiary: D(mdc.onTertiary()),
+    tertiaryContainer: D(mdc.tertiaryContainer()),
+    onTertiaryContainer: D(mdc.onTertiaryContainer()),
+    error: D(mdc.error()),
+    onError: D(mdc.onError()),
+    errorContainer: D(mdc.errorContainer()),
+    onErrorContainer: D(mdc.onErrorContainer()),
+    background: D(mdc.background()),
+    onBackground: D(mdc.onBackground()),
+    surface: D(mdc.surface()),
+    onSurface: D(mdc.onSurface()),
+    surfaceVariant: D(mdc.surfaceVariant()),
+    onSurfaceVariant: D(mdc.onSurfaceVariant()),
+    outline: D(mdc.outline()),
+    outlineVariant: D(mdc.outlineVariant()),
+    shadow: D(mdc.shadow()),
+    scrim: D(mdc.scrim()),
+    inverseSurface: D(mdc.inverseSurface()),
+    inverseOnSurface: D(mdc.inverseOnSurface()),
+    inversePrimary: D(mdc.inversePrimary()),
+    primaryHue: sourceHct.hue,
+    primaryChroma: sourceHct.chroma,
+    secondaryHue: darkScheme.secondaryPalette.hue,
   };
 
   return { light, dark };
