@@ -27,3 +27,12 @@ back
 *.sw?
 src/assets/sc_specular_map.png
 src/assets/sc_ambient_occlusion_map.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+server/.venv/
+
+# pnpm (project uses pnpm, npm lock is a leftover)
+package-lock.json
