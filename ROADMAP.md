@@ -1,6 +1,6 @@
 # 项目路线图
 
-> 最后更新：2026-05-25（Monet 取色归入视觉优化）
+> 最后更新：2026-06-02
 
 ---
 
@@ -15,7 +15,7 @@
 
 | 状态 | 任务 | 优先级 | 拆解 | 更新日期 | 备注 |
 |------|------|--------|------|----------|------|
-| 📋 计划中 | 摄像机空闲自动回正 | 中 | ① 监听 OrbitControls 的 `start`/`end` 事件记录最后交互时间<br>② 空闲超过 3 秒后，用 GSAP 将 camera.position 平滑过渡到 `CAMERA_END`<br>③ 回正期间禁用 OrbitControls 避免冲突<br>④ 考虑配合 `CAMERA_INITIAL` 是否要区分"初始位"和"回正位" | 2026-05-25 | 用 `@react-three/drei` 的 OrbitControls + GSAP 实现 |
+| ✅ 已完成 | 摄像机空闲自动回正 | 中 | ① 监听 OrbitControls 的 `start`/`end` 事件记录最后交互时间<br>② 空闲超过 3 秒后，用 GSAP 将 camera.position 平滑过渡到 `CAMERA_END`<br>③ 回正期间禁用 OrbitControls 避免冲突<br>④ 考虑配合 `CAMERA_INITIAL` 是否要区分"初始位"和"回正位" | 2026-06-02 | 用 `@react-three/drei` 的 OrbitControls + GSAP 实现 |
 
 ## 工程化 & 开发体验
 
@@ -35,7 +35,7 @@
 | 状态 | 任务 | 优先级 | 拆解 | 更新日期 | 备注 |
 |------|------|--------|------|----------|------|
 | 📋 计划中 | 入场动画底部圆圈动效优化 | 低 | ① 调整底部两个旋转环（meshRef1/meshRef2）入场时的缓动函数，从恒定速度改为 ease 曲线<br>② 配合 EntranceReveal GSAP timeline 的时间轴同步<br>③ 考虑加入透明度/缩放渐入效果 | 2026-05-25 | 纯细节打磨，不影响功能 |
-| 📋 计划中 | 浅色模式下毛玻璃背景控件效果调优 | 低 | ① 调整 `cardGlassBg` 亮色模式下的 rgba 参数（当前 `rgba(255,255,255,0.7)`）<br>② 可能需要配合调整 `backdrop-filter: blur(10px)` 的模糊强度<br>③ 分别在 panel 和 tooltip 上验证效果 | 2026-05-25 | 仅调参，不改结构 |
+| ✅ 已完成 | 浅色模式下毛玻璃背景控件效果调优 | 低 | ① 调整 `cardGlassBg` 亮色模式下的 rgba 参数（当前 `rgba(255,255,255,0.7)`）<br>② 可能需要配合调整 `backdrop-filter: blur(10px)` 的模糊强度<br>③ 分别在 panel 和 tooltip 上验证效果 | 2026-06-02 | 仅调参，不改结构 |
 | 📋 计划中 | 引入 Monet 算法替换现有主题色生成 | 中 | ① 调研 `@material/material-color-utilities` 接入方式<br>② 用 argbFromHex + Hct 替换当前 `colorjs.io` 的 HSL 推算逻辑<br>③ 生成 tonal palette 替代手动调 primaryHover/primaryActive<br>④ 移除 `tokens.ts` 中的手算变体逻辑 | 2026-05-25 | 原 Monet 取色板块归入此处 |
 | 📋 计划中 | 解耦后组件动画/设计细节完善 | 低 | ① 等组件解耦完成后再启动<br>② 逐一检查提取后组件的动画流畅度与设计细节<br>③ 具体内容待定 | 2026-05-25 | 依赖解耦任务完成 |
 | 📋 计划中 | 3D 模型电流/闪电包裹特效 | 低 | ① 调研实现方案：custom shader / 动态 line geometry / 粒子系统<br>② 围绕 server_room.glb 模型外围生成动态电流效果<br>③ 参考闪电苦力怕的蓝色动态包裹效果 | 2026-05-25 | 有难度，先研究可行性 |
