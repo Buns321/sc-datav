@@ -1,6 +1,6 @@
 # 项目路线图
 
-> 最后更新：2026-06-02
+> 最后更新：2026-06-05
 
 ---
 
@@ -8,7 +8,7 @@
 
 | 状态 | 任务 | 优先级 | 拆解 | 更新日期 | 备注 |
 |------|------|--------|------|----------|------|
-| — | — | — | — | — | 暂无，等待你的想法 |
+| ✅ 已完成 | 组件文字配置化 | 中 | ① 梳理各组件中硬编码的中文字符串<br>② 创建 `src/config/config.ts` 统一文案常量 `CHART_TEXTS`<br>③ chart4 已替换为 config 变量引用（pilot）<br>④ 其他 chart 后续照 chart4 模式逐一替换 | 2026-06-05 | chart4 打样完成，其余图表复用同一模式
 
 
 ## DataCenter 功能增强
@@ -22,13 +22,15 @@
 | 状态 | 任务 | 优先级 | 拆解 | 更新日期 | 备注 |
 |------|------|--------|------|----------|------|
 | 📋 计划中 | 项目文档撰写 | 低 | ① 待项目沉淀更成熟后启动<br>② 具体内容/形式待定 | 2026-05-25 | 时机未到，先占位 |
-| 📋 计划中 | 统一配置系统 | 中 | ① 设计全局 config 层，集中管理所有可调参数（相机位置、动画时长、颜色、特效开关等）<br>② 各组件从 config 读取参数，移除硬编码 magic number<br>③ 支持运行时热更新配置<br>④ 考虑支持按页面/场景覆盖默认配置 | 2026-05-25 | 替代"进组件改代码"的硬编码模式 |
+| ✅ 已完成 | 统一配置系统 | 中 | ① 创建 `src/config/config.ts` 单一配置文件，集中管理摄像机、灯光、材质、特效、轨道控制器、特性开关、文案<br>② 8 个组件已改为从 `DC.xxx` 读取参数，消除所有硬编码 magic number<br>③ 删除了旧的散落配置文件 `camera.ts`、`materials.ts`、`texts.ts`<br>④ 按页面/场景覆盖：后续新页面可创建各自的 `config.{page}.ts` | 2026-06-05 | 大一统 config 落地，改参数只需一个文件 |
 
 ## 后端
 
 | 状态 | 任务 | 优先级 | 拆解 | 更新日期 | 备注 |
 |------|------|--------|------|----------|------|
-| — | — | — | — | — | 暂无，等待你的想法 |
+| 📋 计划中 | Chart1~6 接入后端数据链路 | 高 | ① 扩展 tcp_server 多频道路由（chart1~6）<br>② 创建各 chart 的 transformer（仿 chart4 模式）<br>③ 创建各 chart 的 data 存储模块<br>④ 前端 dataStore + types + demo.tsx + chart.tsx 改从 store 读<br>⑤ TUI 仿真器验证 6 个 chart 实时更新 | 2026-06-05 | 先不做 ICD 外置化，硬编码模式直接复制到 5 个新 chart |
+| 📋 计划中 | ICD / 映射配置 YAML 外置化 | 中 | ① 创建 mapping.yaml 统一承载 data_points + charts 映射规则<br>② 创建 config_loader.py（yaml.safe_load + 降级）<br>③ 6 个 transformer 改为从 config_loader 构建映射表<br>④ 仿真器从 config_loader 读 DO ref | 2026-06-05 | 等 chart1~6 全通后再做，一次性提取 |
+| 📋 计划中 | 交互式 TUI 仿真器 | 低 | ① 添加 rich 依赖<br>② Rich 面板：数据模式切换 / 调间隔 / 实时显示传感器原始值<br>③ 不涉及 chart 概念，只管数据生成和发送 | 2026-06-05 | 替代命令行脚本；和 chart 接入可并行 |
 
 ## 视觉优化
 
@@ -36,7 +38,7 @@
 |------|------|--------|------|----------|------|
 | 📋 计划中 | 入场动画底部圆圈动效优化 | 低 | ① 调整底部两个旋转环（meshRef1/meshRef2）入场时的缓动函数，从恒定速度改为 ease 曲线<br>② 配合 EntranceReveal GSAP timeline 的时间轴同步<br>③ 考虑加入透明度/缩放渐入效果 | 2026-05-25 | 纯细节打磨，不影响功能 |
 | ✅ 已完成 | 浅色模式下毛玻璃背景控件效果调优 | 低 | ① 调整 `cardGlassBg` 亮色模式下的 rgba 参数（当前 `rgba(255,255,255,0.7)`）<br>② 可能需要配合调整 `backdrop-filter: blur(10px)` 的模糊强度<br>③ 分别在 panel 和 tooltip 上验证效果 | 2026-06-02 | 仅调参，不改结构 |
-| 📋 计划中 | 引入 Monet 算法替换现有主题色生成 | 中 | ① 调研 `@material/material-color-utilities` 接入方式<br>② 用 argbFromHex + Hct 替换当前 `colorjs.io` 的 HSL 推算逻辑<br>③ 生成 tonal palette 替代手动调 primaryHover/primaryActive<br>④ 移除 `tokens.ts` 中的手算变体逻辑 | 2026-05-25 | 原 Monet 取色板块归入此处 |
+| ✅ 已完成 | 引入 Monet 算法替换现有主题色生成 | 中 | ① 调研 `@material/material-color-utilities` 接入方式<br>② 用 argbFromHex + Hct 替换当前 `colorjs.io` 的 HSL 推算逻辑<br>③ 生成 tonal palette 替代手动调 primaryHover/primaryActive<br>④ 移除 `tokens.ts` 中的手算变体逻辑 | 2026-05-25 | 原 Monet 取色板块归入此处 |
 | 📋 计划中 | 解耦后组件动画/设计细节完善 | 低 | ① 等组件解耦完成后再启动<br>② 逐一检查提取后组件的动画流畅度与设计细节<br>③ 具体内容待定 | 2026-05-25 | 依赖解耦任务完成 |
 | 📋 计划中 | 3D 模型电流/闪电包裹特效 | 低 | ① 调研实现方案：custom shader / 动态 line geometry / 粒子系统<br>② 围绕 server_room.glb 模型外围生成动态电流效果<br>③ 参考闪电苦力怕的蓝色动态包裹效果 | 2026-05-25 | 有难度，先研究可行性 |
 | 📋 计划中 | 3D 模型边缘发光效果 | 高 | ① 调研实现方案：边缘光 shader（fresnel 效果）/ 后处理 bloom<br>② 在 server_room 模型各部件边缘叠加自发光<br>③ 可能需要结合 `MeshStandardMaterial.emissive` + 自定义发光强度控制 | 2026-05-25 | 提升模型视觉层次感 |
