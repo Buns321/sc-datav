@@ -39,12 +39,18 @@ from dotenv import load_dotenv
 # 导入数据层（存数据的"便签纸"）和 WebSocket 管理器（广播数据的"广播站"）
 from src.data.chart4_data import update_data
 from src.ws_manager import manager as ws_manager
+from src.transformers.chart4_transformer import Chart4Transformer
 
 # load_dotenv() 读取 .env 文件中的环境变量
 # 类似前端 Vite 读取 .env 文件的过程
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# ══════════════════════════════════════════════════════════════════════════
+# Transformer 实例 —— 每个 TCP 连接共享同一个 transformer 单例
+# ══════════════════════════════════════════════════════════════════════════
+_transformer = Chart4Transformer()
 
 
 async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -113,42 +119,64 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
                 continue  # 跳过这条错误消息，继续等待下一条
 
             # ================================================================
-            # 步骤 3：提取需要的数据
+            # 步骤 3：提取公用字段并判断消息类型
             # ================================================================
-            # 从 JSON 中取出 type 和 payload
             msg_type = message.get("type", "")
             payload = message.get("payload")
             timestamp = message.get("timestamp", "")
 
-            # 验证消息类型
-            if msg_type != "chart4_update":
+            # ── 分支 A: chart4_update（旧格式，调试用，直通存储） ──
+            if msg_type == "chart4_update":
+                # 验证 payload 是否存在
+                if not payload:
+                    logger.warning(f"⚠️ chart4_update 缺少 payload 字段 ({client_addr})")
+                    continue
+
+                logger.info(f"✅ [{msg_type}] 解析成功 ({client_addr}), 时间={timestamp}")
+
+                # 直接存入数据层并广播
+                await update_data(payload)
+
+                broadcast_msg = {
+                    "type": "data",
+                    "channel": "chart4",
+                    "payload": payload,
+                    "timestamp": timestamp,
+                }
+                await ws_manager.broadcast(broadcast_msg)
+
+            # ── 分支 B: iec61850_raw（新格式，生产用，走 transformer） ──
+            elif msg_type == "iec61850_raw":
+                data_points = message.get("data_points")
+                if not data_points:
+                    logger.warning(f"⚠️ iec61850_raw 缺少 data_points 字段 ({client_addr})")
+                    continue
+
+                device = message.get("device", "unknown")
+                logger.info(
+                    f"✅ [{msg_type}] 收到 {len(data_points)} 个数据对象 "
+                    f"来自 {device} ({client_addr}), 时间={timestamp}"
+                )
+
+                # 喂入 transformer —— 累积到足够数据后才输出
+                result = _transformer.feed(data_points)
+
+                if result is not None:
+                    # 数据到齐，存入数据层并广播
+                    payload_dict = result.model_dump()
+                    await update_data(payload_dict)
+
+                    broadcast_msg = {
+                        "type": "data",
+                        "channel": "chart4",
+                        "payload": payload_dict,
+                        "timestamp": timestamp,
+                    }
+                    await ws_manager.broadcast(broadcast_msg)
+
+            else:
                 logger.warning(f"⚠️ 未知消息类型 ({client_addr}): {msg_type}")
                 continue
-
-            # 验证 payload 是否存在
-            if not payload:
-                logger.warning(f"⚠️ 消息缺少 payload 字段 ({client_addr})")
-                continue
-
-            logger.info(f"✅ 解析成功 ({client_addr}): type={msg_type}, 时间={timestamp}")
-
-            # ================================================================
-            # 步骤 4：更新"便签纸"上的数据
-            # ================================================================
-            # 调用数据层的 update_data 函数，写入新数据
-            await update_data(payload)
-
-            # ================================================================
-            # 步骤 5：通过 WebSocket 广播给所有浏览器
-            # ================================================================
-            # 构造一条"前端能看懂"的消息，广播出去
-            broadcast_msg = {
-                "type": "data",
-                "channel": "chart4",
-                "payload": payload,
-                "timestamp": timestamp,
-            }
-            await ws_manager.broadcast(broadcast_msg)
 
     except ConnectionResetError:
         # 🔧 ConnectionResetError = 对方突然断开（类似"对方挂电话"）
