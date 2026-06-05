@@ -4,6 +4,7 @@ import styled from "styled-components";
 import NumberAnimation from "@/components/numberAnimation";
 import type { TokenMap } from "../theme";
 import { useDataStore } from "../stores/dataStore";
+import { CHART_TEXTS } from "@/config/config";
 
 /**
  * 默认数据 —— 当后端未连接或数据还没到时，使用这个降级值。
@@ -45,7 +46,7 @@ const StatisticsNumber = styled(NumberAnimation)`
   color: var(--primary);
 
   &::after {
-    content: "亿万元";
+    content: "${CHART_TEXTS.chart4.revenueUnit}";
     display: inline-block;
     font-size: 12px;
     color: var(--text-secondary);
@@ -158,7 +159,7 @@ export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
         }}
       />
       <Statistics>
-        <StatisticsTitle>收益总计</StatisticsTitle>
+        <StatisticsTitle>{CHART_TEXTS.chart4.revenueLabel}</StatisticsTitle>
         <StatisticsNumber
           value={totalRevenue}
           options={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
@@ -167,7 +168,7 @@ export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
       {Array.from({ length: 4 }, (_, k) => (
         <Statistics1 key={k}>
           <CompanyIcon />
-          企业数量
+          {CHART_TEXTS.chart4.enterpriseLabel}
           <Statistics1Number
             value={enterpriseCount}
             options={{ maximumFractionDigits: 0 }}

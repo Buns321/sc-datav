@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
+import { DC } from "@/config/config";
 
 export type ThemeMode = "light" | "dark";
 
@@ -23,13 +24,13 @@ interface ConfigStore {
 export const useConfigStore = create<ConfigStore>()(
   subscribeWithSelector((set, _, store) => ({
     mapPlayComplete: false,
-    cloud: true,
-    bar: true,
-    rotation: true,
-    heat: true,
-    mode: true,
-    themeMode: "light", // 亮色 / 暗色模式
-    seedColor: undefined,
+    cloud: DC.features.cloud,
+    bar: DC.features.bar,
+    rotation: DC.features.rotation,
+    heat: DC.features.heat,
+    mode: DC.features.mode,
+    themeMode: DC.features.themeMode,
+    seedColor: DC.features.seedColor,
     toggle: (key) => set((s) => ({ [key]: !s[key] })),
     setThemeMode: (mode) => set({ themeMode: mode }),
     setSeedColor: (hex) => set({ seedColor: hex }),

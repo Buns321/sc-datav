@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useGLTF } from "@react-three/drei";
 import { MeshStandardMaterial, Color, Mesh } from "three";
-import { COLORS, ROUGHNESS, METALNESS } from "./materials";
+import { DC } from "@/config/config";
 
 export default function ServerRoom() {
   const { scene } = useGLTF("/sc-datav/model/glb/server_room.glb");
@@ -11,17 +11,17 @@ export default function ServerRoom() {
       if (!(child instanceof Mesh)) return;
 
       const name = child.name.toLowerCase();
-      let color: string = COLORS.default;
-      let roughness: number = ROUGHNESS.default;
-      let metalness: number = METALNESS.default;
+      let color: string = DC.materials.default.color;
+      let roughness: number = DC.materials.default.roughness;
+      let metalness: number = DC.materials.default.metalness;
 
-      if (name.startsWith("body"))       { color = COLORS.body;  roughness = ROUGHNESS.body;  metalness = METALNESS.body; }
-      else if (name.startsWith("rack.")) { color = COLORS.rack;  roughness = ROUGHNESS.rack;  metalness = METALNESS.rack; }
-      else if (name === "room")          { color = COLORS.floor; roughness = ROUGHNESS.floor; metalness = METALNESS.floor; }
-      else if (name.startsWith("cam"))   { color = COLORS.camera; roughness = ROUGHNESS.camera; metalness = METALNESS.camera; }
-      else if (name.startsWith("swbox")) { color = COLORS.swBox; roughness = ROUGHNESS.swBox; metalness = METALNESS.swBox; }
-      else if (name.startsWith("sw."))   { color = COLORS.sw;    roughness = ROUGHNESS.sw;    metalness = METALNESS.sw; }
-      else if (name.startsWith("firekiller")) { color = COLORS.fireKiller; roughness = ROUGHNESS.fireKiller; metalness = METALNESS.fireKiller; }
+      if (name.startsWith("body"))       { color = DC.materials.body.color;  roughness = DC.materials.body.roughness;  metalness = DC.materials.body.metalness; }
+      else if (name.startsWith("rack.")) { color = DC.materials.rack.color;  roughness = DC.materials.rack.roughness;  metalness = DC.materials.rack.metalness; }
+      else if (name === "room")          { color = DC.materials.floor.color; roughness = DC.materials.floor.roughness; metalness = DC.materials.floor.metalness; }
+      else if (name.startsWith("cam"))   { color = DC.materials.camera.color; roughness = DC.materials.camera.roughness; metalness = DC.materials.camera.metalness; }
+      else if (name.startsWith("swbox")) { color = DC.materials.swBox.color; roughness = DC.materials.swBox.roughness; metalness = DC.materials.swBox.metalness; }
+      else if (name.startsWith("sw."))   { color = DC.materials.sw.color;    roughness = DC.materials.sw.roughness;    metalness = DC.materials.sw.metalness; }
+      else if (name.startsWith("firekiller")) { color = DC.materials.fireKiller.color; roughness = DC.materials.fireKiller.roughness; metalness = DC.materials.fireKiller.metalness; }
 
       child.material = new MeshStandardMaterial({
         color: new Color(color),

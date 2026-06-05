@@ -5,7 +5,7 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import Lights from "./lights";
 import Scene from "./scene";
 import CameraAutoRecenter from "./CameraAutoRecenter";
-import { CAMERA_INITIAL } from "./camera";
+import { DC } from "@/config/config";
 import { useConfigStore } from "../stores";
 import { generateTokens, lightTokens, darkTokens } from "../theme";
 
@@ -36,8 +36,8 @@ export default function Index() {
       <Canvas
         flat
         shadows
-        camera={{ position: [CAMERA_INITIAL.x, CAMERA_INITIAL.y, CAMERA_INITIAL.z], fov: 50, far: 2000, near: 1 }}
-        dpr={[1, 2]}>
+        camera={{ position: [DC.camera.initial.x, DC.camera.initial.y, DC.camera.initial.z], fov: DC.camera.fov, far: DC.camera.far, near: DC.camera.near }}
+        dpr={[...DC.camera.dpr]}>
         <color attach="background" args={[bgColor]} />
         <Lights />
 
@@ -46,22 +46,22 @@ export default function Index() {
         <CameraAutoRecenter controlsRef={controlsRef} />
 
         <ContactShadows
-          opacity={0.5}
-          scale={300}
-          blur={0.5}
-          resolution={256}
-          color="#000000"
+          opacity={DC.effects.contactShadows.opacity}
+          scale={DC.effects.contactShadows.scale}
+          blur={DC.effects.contactShadows.blur}
+          resolution={DC.effects.contactShadows.resolution}
+          color={DC.effects.contactShadows.color}
         />
 
         <OrbitControls
           ref={controlsRef}
-          enablePan
-          enableZoom
-          enableRotate
-          zoomSpeed={0.3}
-          minDistance={100}
-          maxDistance={300}
-          maxPolarAngle={1.5}
+          enablePan={DC.controls.enablePan}
+          enableZoom={DC.controls.enableZoom}
+          enableRotate={DC.controls.enableRotate}
+          zoomSpeed={DC.controls.zoomSpeed}
+          minDistance={DC.controls.minDistance}
+          maxDistance={DC.controls.maxDistance}
+          maxPolarAngle={DC.controls.maxPolarAngle}
         />
       </Canvas>
     </CanvasWrapper>

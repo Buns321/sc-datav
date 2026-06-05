@@ -1,7 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { useThree } from "@react-three/fiber";
 import { gsap } from "gsap";
-import { CAMERA_END, REVEAL_DURATION } from "./camera";
+import { DC } from "@/config/config";
 import { useConfigStore } from "../stores";
 
 /** OrbitControls 默认的注视目标（场景原点附近） */
@@ -64,9 +64,9 @@ export default function CameraAutoRecenter({ controlsRef }: CameraAutoRecenterPr
 
         killTween();
         recenterTweenRef.current = gsap.to(from, {
-          camX: CAMERA_END.x,
-          camY: CAMERA_END.y,
-          camZ: CAMERA_END.z,
+          camX: DC.camera.end.x,
+          camY: DC.camera.end.y,
+          camZ: DC.camera.end.z,
           targetX: DEFAULT_TARGET.x,
           targetY: DEFAULT_TARGET.y,
           targetZ: DEFAULT_TARGET.z,
@@ -78,7 +78,7 @@ export default function CameraAutoRecenter({ controlsRef }: CameraAutoRecenterPr
             controls.update();
           },
         });
-      }, REVEAL_DURATION.recenter * 1000);
+      }, DC.camera.revealDuration.recenter * 1000);
     };
 
     controls.addEventListener("start", onInteractionStart);

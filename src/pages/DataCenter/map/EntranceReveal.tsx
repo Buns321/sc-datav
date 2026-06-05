@@ -3,11 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { gsap } from "gsap";
 import { type Group } from "three";
 import { useConfigStore } from "../stores";
-import {
-  CAMERA_SWEEP,
-  CAMERA_END,
-  REVEAL_DURATION,
-} from "./camera";
+import { DC } from "@/config/config";
 
 export interface EntranceRevealProps {
   children: ReactNode;
@@ -28,17 +24,17 @@ export default function EntranceReveal({ children }: EntranceRevealProps) {
 
     // 第一段：相机绕到侧面（制造动态感）
     tl.to(camera.position, {
-      ...CAMERA_SWEEP,
-      duration: REVEAL_DURATION.sweep,
+      ...DC.camera.sweep,
+      duration: DC.camera.revealDuration.sweep,
       ease: "circ.out",
     });
 
     // 最后一段：相机回到正面
     tl.to(camera.position, {
-      x: CAMERA_END.x,
-      y: CAMERA_END.y,
-      z: CAMERA_END.z,
-      duration: REVEAL_DURATION.home,
+      x: DC.camera.end.x,
+      y: DC.camera.end.y,
+      z: DC.camera.end.z,
+      duration: DC.camera.revealDuration.home,
       ease: "power2.inOut",
     });
 

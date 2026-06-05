@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { DirectionalLight } from "three";
 import { useConfigStore } from "../stores";
 import { generateTokens, lightTokens, darkTokens } from "../theme";
+import { DC } from "@/config/config";
 
 export default function Lights() {
   const lightRef = useRef<DirectionalLight>(null!);
@@ -18,11 +19,11 @@ export default function Lights() {
 
   return (
     <>
-      <ambientLight intensity={2} />
+      <ambientLight intensity={DC.lights.ambient.intensity} />
       <directionalLight
         ref={lightRef}
-        intensity={12}
-        position={[0, 200, 20]}
+        intensity={DC.lights.directional.intensity}
+        position={[...DC.lights.directional.position]}
         color={surfaceColor}
       />
     </>
