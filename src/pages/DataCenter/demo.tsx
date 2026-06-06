@@ -4,6 +4,7 @@ import { useConfigStore } from "./stores";
 import { useDataStore } from "./stores/dataStore";
 import { applyTokens, lightTokens, darkTokens, generateTokens } from "./theme";
 import type { TokenMap } from "./theme";
+import { DC } from "@/config/config";
 import Panel from "./panel";
 import Map from "./map";
 
@@ -43,15 +44,15 @@ export default function Index() {
     const setConnectionStatus = useDataStore.getState().setConnectionStatus;
 
     const timer = setTimeout(() => {
-      const ws = new WebSocket("ws://localhost:8000/ws");
+      const ws = new WebSocket(DC.ws.url);
       wsRef.current = ws;
 
       ws.onopen = () => setConnectionStatus("connected");
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
-          if (msg.channel === "chart4" && msg.payload) {
-            setChart4(msg.payload);
+          if (DC.ws.channels.includes(msg.channel) && msg.payload) {
+            if (msg.channel === "chart4") setChart4(msg.payload);
           }
         } catch { /* ignore parse errors */ }
       };

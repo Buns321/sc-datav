@@ -4,26 +4,21 @@ import styled from "styled-components";
 import NumberAnimation from "@/components/numberAnimation";
 import type { TokenMap } from "../theme";
 import { useDataStore } from "../stores/dataStore";
-import { CHART_TEXTS } from "@/config/config";
+import { DC, CHART_TEXTS } from "@/config/config";
 
 /**
- * 默认数据 —— 当后端未连接或数据还没到时，使用这个降级值。
- * 保证页面不会因为缺少数据而崩溃。
- * 数据值与前端的原始硬编码一致，也与后端 chart4_data.py 的默认值一致。
+ * 降级数据 — 当后端未连接或数据还没到时使用。
+ * 值来自 config.ts 的 DC.chart4.defaultData。
  */
-const DEFAULT_DATA = {
-  lineData: [270, 400, 380, 420, 300, 410, 400, 330, 210, 290],
-  totalRevenue: 99608,
-  enterpriseCount: 7792,
-};
+const DEFAULT_DATA = DC.chart4.defaultData;
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: 2fr repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(${DC.chart4.layout.columns}, minmax(0, 1fr));
+  grid-template-rows: 2fr repeat(${DC.chart4.layout.subRows - 1}, minmax(0, 1fr));
+  gap: ${DC.chart4.layout.gap}px;
 `;
 
 const Statistics = styled.div`
@@ -33,7 +28,7 @@ const Statistics = styled.div`
 `;
 
 const StatisticsTitle = styled.div`
-  font-size: 12px;
+  font-size: ${DC.chart4.fonts.statisticsTitle.size}px;
   color: var(--text-secondary);
 `;
 
@@ -41,8 +36,8 @@ const StatisticsNumber = styled(NumberAnimation)`
   display: flex;
   align-items: baseline;
   gap: 4px;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: ${DC.chart4.fonts.statisticsNumber.size}px;
+  font-weight: ${DC.chart4.fonts.statisticsNumber.weight};
   color: var(--primary);
 
   &::after {
@@ -61,8 +56,8 @@ const Statistics1 = styled.div`
 `;
 
 const Statistics1Number = styled(NumberAnimation)`
-  font-size: 20px;
-  font-weight: 600;
+  font-size: ${DC.chart4.fonts.statistics1Number.size}px;
+  font-weight: ${DC.chart4.fonts.statistics1Number.weight};
   margin-left: 16px;
   color: var(--primary);
 `;
@@ -117,10 +112,10 @@ export default function Charts4({ activeTokens }: { activeTokens: TokenMap }) {
             borderRadius: 8,
           },
           grid: {
-            top: 16,
-            bottom: 16,
-            left: 16,
-            right: 16,
+            top: DC.chart4.echarts.grid.top,
+            bottom: DC.chart4.echarts.grid.bottom,
+            left: DC.chart4.echarts.grid.left,
+            right: DC.chart4.echarts.grid.right,
             outerBoundsMode: "same",
           },
           calculable: true,

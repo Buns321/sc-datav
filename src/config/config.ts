@@ -161,6 +161,45 @@ export const CHART_TEXTS = {
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════
+// 8. Chart4 — 图表专属配置（数据降级、布局、ECharts 参数、字号）
+// ══════════════════════════════════════════════════════════════════════════
+
+const chart4 = {
+  /** 后端未连接时的降级数据 */
+  defaultData: {
+    lineData: [270, 400, 380, 420, 300, 410, 400, 330, 210, 290] as readonly number[],
+    totalRevenue: 99608,
+    enterpriseCount: 7792,
+  },
+  /** 内部 sub-grid 布局 */
+  layout: {
+    columns: 2,
+    subRows: 3,
+    gap: 16,
+  },
+  /** ECharts 参数 */
+  echarts: {
+    grid: { top: 16, bottom: 16, left: 16, right: 16 } as const,
+  },
+  /** 数字卡片字号 */
+  fonts: {
+    statisticsNumber: { size: 28, weight: 600 },
+    statistics1Number:  { size: 20, weight: 600 },
+    statisticsTitle:    { size: 12 },
+  },
+} as const;
+
+// ══════════════════════════════════════════════════════════════════════════
+// 9. WebSocket 连接
+// ══════════════════════════════════════════════════════════════════════════
+
+const ws = {
+  url: "ws://localhost:8000/ws",
+  /** 监听的频道列表（后端通过 broadcast msg.channel 字段匹配） */
+  channels: ["chart4"] as readonly string[],
+} as const;
+
+// ══════════════════════════════════════════════════════════════════════════
 // 统一导出
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -171,6 +210,8 @@ export const DC = {
   effects,
   controls,
   features,
+  chart4,
+  ws,
 } as const;
 
 export type DCConfig = typeof DC;
