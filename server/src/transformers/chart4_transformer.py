@@ -10,7 +10,7 @@ chart4_transformer.py — IEC 61850 DO ref → Chart4 前端字段
   - buffer 模式:     内部缓存 DO ref 最新值，所有字段到齐才输出
   - 品质字段:        当前仅记录不校验，后续可扩展过滤逻辑
 
-🔧 写给嵌入式开发者：
+写给嵌入式开发者：
   类比 Modbus 寄存器表 → SCADA 系统画面的"点表"。
   这里的映射表 = 把 IED 的每个数据对象分配到前端图表的对应位置。
 """
@@ -41,7 +41,7 @@ class Transformer(Protocol):
 # 如果 YAML 不可用，config_loader 内置 fallback。
 # ══════════════════════════════════════════════════════════════════════════
 
-from src.config_loader import load_chart_mapping, get_all_needed_refs
+from src.config_loader import load_chart_mapping_for_source, get_all_needed_refs_for_source
 
 # ── 编译 transform 表达式 ──
 def _compile_transform(expr: str) -> Callable[[float], int | float]:
@@ -50,13 +50,13 @@ def _compile_transform(expr: str) -> Callable[[float], int | float]:
     try:
         return eval(f"lambda v: {expr}", {"__builtins__": safe_builtins}, {})
     except Exception:
-        logger.warning(f"⚠️ 无法编译 transform 表达式: {expr}，使用恒等")
+        logger.warning(f"无法编译 transform 表达式: {expr}，使用恒等")
         return lambda v: v
 
-# ── 从 config_loader 构建映射表 ──
-_mapping = load_chart_mapping("chart4")
+# ── 从 config_loader 构建映射表（仅 iec61850 来源）──
+_mapping = load_chart_mapping_for_source("iec61850", "chart4")
 if _mapping is None:
-    raise RuntimeError("chart4 mapping not found in mapping.yaml and no fallback")
+    raise RuntimeError("chart4 iec61850 mapping not found in mapping.yaml and no fallback")
 
 _SINGLE_MAPPING: dict[str, dict[str, str | Callable[[float], int | float]]] = {
     field: {"ref": sm.ref, "transform": _compile_transform(sm.transform)}
@@ -68,7 +68,7 @@ for field_name, items in _mapping.array.items():
     for item in items:
         _LINE_DATA_ITEMS.append((item.ref, item.scale))
 
-_ALL_NEEDED_REFS: set[str] = get_all_needed_refs()
+_ALL_NEEDED_REFS: set[str] = get_all_needed_refs_for_source("iec61850")
 
 
 class Chart4Transformer:
@@ -123,7 +123,7 @@ class Chart4Transformer:
                 if quality:
                     self._quality[ref] = quality
             except (ValueError, TypeError):
-                logger.warning(f"⚠️ 无法将 DO ref [{ref}] 的值转为 float: {value}")
+                logger.warning(f"无法将 DO ref [{ref}] 的值转为 float: {value}")
                 continue
 
         # ── 步骤 2: 检查所有需要的 DO ref 是否到齐 ──
@@ -152,7 +152,7 @@ class Chart4Transformer:
             payload = Chart4Payload(**payload_dict)
 
             logger.info(
-                f"✅ Transformer 输出: "
+                f"Transformer 输出: "
                 f"line_data={payload.line_data[:3]}..., "
                 f"total_revenue={payload.total_revenue}, "
                 f"enterprise_count={payload.enterprise_count}"
@@ -160,7 +160,7 @@ class Chart4Transformer:
             return payload
 
         except Exception as e:
-            logger.error(f"❌ Transformer 构建 Chart4Payload 失败: {e}")
+            logger.error(f"Transformer 构建 Chart4Payload 失败: {e}")
             return None
 
     def _ready(self) -> bool:

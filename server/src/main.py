@@ -8,7 +8,7 @@ main.py — 应用入口文件
   3. 在启动时同时开启 TCP Server（一个"副业"）
   4. 在关闭时清理所有连接
 
-🔧 写给嵌入式开发者的快速理解：
+写给嵌入式开发者的快速理解：
 
 把 FastAPI 想象成 STM32 的 HAL 库：
   - HAL_GPIO_WritePin()       → FastAPI 的 @app.get("/api")
@@ -23,12 +23,12 @@ main.py — 应用入口文件
   cd server
   python -m uvicorn src.main:app --reload --port 8000
 
-🔧 uvicorn 是什么？
+uvicorn 是什么？
   uvicorn 是 Python 的 ASGI 服务器（类似 Vite 的 dev server）。
   - --reload：文件改动后自动重启（类似 Vite 的 HMR）
   - --port：指定监听端口
 
-🔧 "src.main:app" 的含义：
+"src.main:app" 的含义：
   - src.main = src/main.py 文件
   - :app    = 文件中的 app 变量（即 FastAPI() 实例）
   这是一种"告诉 uvicorn 去哪里找应用"的标准写法。
@@ -43,15 +43,16 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 # 导入我们自己写的模块
 from src.ws_manager import manager as ws_manager
-from src.tcp_server import start_tcp_from_env
-from src.data.chart4_data import get_current_data
+from src.engine import DataEngine
+from src.consumers.tcp_consumer import start_tcp_from_env
+from src.consumers.mysql_consumer import start_mysql_polling
 
 # 加载 .env 环境变量
 load_dotenv()
 
 # ============================================================================
 # 日志配置
-# 🔧 logging 是 Python 内置的日志模块，类似前端的 console.log
+# logging 是 Python 内置的日志模块，类似前端的 console.log
 # 但更强大：可以控制级别、输出到文件、带时间戳等
 # ============================================================================
 logging.basicConfig(
@@ -62,24 +63,25 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ============================================================================
-# TCP Server 的引用
-# 需要在应用启动/关闭时访问，所以声明为全局变量
+# 全局引用
+# 需要在应用启动/关闭时访问
 # ============================================================================
-_tcp_server: asyncio.Server | None = None  # 🔧 Type | None = TypeScript 的 Type | null
+_tcp_consumer_task: asyncio.Task | None = None
+_mysql_consumer_task: asyncio.Task | None = None
+_tcp_server: asyncio.Server | None = None
+_engine: DataEngine | None = None
 
 
-# ============================================================================
-# 应用生命周期管理
-#
-# 🔧 @asynccontextmanager 是什么？
-# 这是 Python 的上下文管理器（context manager），用于管理资源的"开启"和"关闭"。
-#
-# 类比：React useEffect 的 return cleanup 函数
-#   yield 之前 = useEffect(() => { ... 副作用代码 ...
-#   yield 之后 = ... return () => { ... 清理代码 ... } }, [])
-#
-# FastAPI 用 lifespan 来管理"应用启动时做什么"和"应用关闭时做什么"。
-# ============================================================================
+async def _start_tcp_consumer(engine: DataEngine) -> None:
+    """启动 TCP 消费者的内部辅助函数"""
+    global _tcp_server
+    _tcp_server = await start_tcp_from_env(engine)
+    # 保持任务活跃（asyncio.create_task 需要一个长期运行的 awaitable）
+    try:
+        await _tcp_server.serve_forever()
+    except asyncio.CancelledError:
+        pass
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -87,42 +89,63 @@ async def lifespan(app: FastAPI):
     应用生命周期管理器
 
     负责：
-      - 应用启动时：启动 TCP Server
-      - 应用关闭时：关闭 TCP Server
+      - 应用启动时：创建 DataEngine，启动 TCP Consumer
+      - 应用关闭时：关闭 TCP Consumer，清理资源
     """
-    global _tcp_server
+    global _tcp_consumer_task, _mysql_consumer_task, _tcp_server, _engine
 
-    # ====== 启动阶段（类似 useEffect 的函数体） ======
+    # ====== 启动阶段 ======
     logger.info("=" * 50)
-    logger.info("🚀 sc-datav 后端服务启动中...")
-    logger.info("=" * 50)
-
-    # 启动 TCP Server（接收上位机的数据）
-    _tcp_server = await start_tcp_from_env()
-
-    logger.info(f"✅ WebSocket 端点: ws://localhost:{os.getenv('FASTAPI_PORT', '8000')}/ws")
-    logger.info(f"✅ TCP 数据端口: tcp://localhost:{os.getenv('TCP_PORT', '9000')}")
+    logger.info("sc-datav 后端服务启动中...")
     logger.info("=" * 50)
 
-    yield  # ← 这里是"分界线"，以上是启动，以下是关闭
+    # 创建中央数据引擎（全局单例）
+    _engine = DataEngine()
+    logger.info(" DataEngine 已初始化")
 
-    # ====== 关闭阶段（类似 useEffect 的 return cleanup） ======
-    logger.info("🛑 sc-datav 后端服务关闭中...")
+    # 并发启动 TCP Consumer（接收上位机数据）
+    _tcp_consumer_task = asyncio.create_task(_start_tcp_consumer(_engine))
+
+    # 并发启动 MySQL Consumer（轮询数据库统计值）
+    _mysql_consumer_task = asyncio.create_task(start_mysql_polling(_engine))
+
+    logger.info(f"WebSocket 端点: ws://localhost:{os.getenv('FASTAPI_PORT', '8000')}/ws")
+    logger.info(f"TCP 数据端口: tcp://{os.getenv('TCP_HOST', '127.0.0.1')}:{os.getenv('TCP_PORT', '9000')}")
+    logger.info("=" * 50)
+
+    yield  #  分界线
+
+    # ====== 关闭阶段 ======
+    logger.info("sc-datav 后端服务关闭中...")
+
+    if _tcp_consumer_task:
+        _tcp_consumer_task.cancel()
+        try:
+            await _tcp_consumer_task
+        except asyncio.CancelledError:
+            pass
+        logger.info(" TCP Consumer 已关闭")
+
+    if _mysql_consumer_task:
+        _mysql_consumer_task.cancel()
+        try:
+            await _mysql_consumer_task
+        except asyncio.CancelledError:
+            pass
+        logger.info(" MySQL Consumer 已关闭")
 
     if _tcp_server:
-        # 关闭 TCP Server，不再接受新连接
         _tcp_server.close()
-        # 等待所有现有连接处理完毕
         await _tcp_server.wait_closed()
-        logger.info("✅ TCP Server 已关闭")
+        logger.info("TCP Server 已关闭")
 
-    logger.info("👋 服务已完全关闭")
+    logger.info("服务已完全关闭")
 
 
 # ============================================================================
 # 创建 FastAPI 应用
 #
-# 🔧 FastAPI() 创建一个应用实例。
+# FastAPI() 创建一个应用实例。
 # 这个 app 对象就是后续所有路由、中间件的"注册中心"。
 # 类比：Express 的 const app = express()
 # ============================================================================
@@ -137,7 +160,7 @@ app = FastAPI(
 # ============================================================================
 # WebSocket 路由
 #
-# 🔧 @app.websocket("/ws")
+# @app.websocket("/ws")
 # 这行代码的意思是："如果有人访问 /ws 路径，而且是用 WebSocket 协议，
 # 就调用下面这个函数处理它"。
 #
@@ -169,39 +192,40 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         # 步骤 2：连接成功后，立即推送当前 Chart4 数据
-        # 这样前端打开页面时不用等待上位机发数据，
-        # 直接就能看到上一次的数据（或默认值）
-        current_data = await get_current_data()
-        initial_msg = {
-            "type": "data",
-            "channel": "chart4",
-            "payload": current_data,
-            "timestamp": "",
-        }
-        await websocket.send_json(initial_msg)
-        logger.info(f"📤 已向新连接发送当前 Chart4 数据")
+        # 数据来自 DataEngine 内部缓存（多源合并后的最新数据）
+        # 如果引擎尚未收到任何数据，返回默认降级值
+        if _engine is not None:
+            current_data = await _engine.get_current_data()
+            initial_msg = {
+                "type": "data",
+                "channel": "chart4",
+                "payload": current_data,
+                "timestamp": "",
+            }
+            await websocket.send_json(initial_msg)
+            logger.info(f"已向新连接发送当前 Chart4 数据")
 
         # 步骤 3：进入消息循环 —— 等待前端发来消息
-        # 🔧 这是一个无限循环，只要连接不断开就一直运行
+        # 这是一个无限循环，只要连接不断开就一直运行
         # 当客户端断开连接时，receive_text() 会抛出 WebSocketDisconnect 异常
         while True:
             # 等待前端发来一条文本消息
-            # 🔧 receive_text() = 等待并接收一条文本消息
+            # receive_text() = 等待并接收一条文本消息
             # 如果前端不发消息，这里就一直等待（不消耗 CPU）
             data = await websocket.receive_text()
 
-            # 🔧 当前阶段，前端可能不需要发送复杂指令
+            # 当前阶段，前端可能不需要发送复杂指令
             # 这里预留了消息处理逻辑的扩展点
             # 后续如果需要前端向后端发指令（比如切换数据源），在这里扩展
-            logger.debug(f"📨 收到前端消息: {data}")
+            logger.debug(f"收到前端消息: {data}")
 
     except WebSocketDisconnect:
-        # 🔧 WebSocketDisconnect 是 FastAPI 提供的异常
+        # WebSocketDisconnect 是 FastAPI 提供的异常
         # 当浏览器关闭页面或断网时，receive_text() 会抛出这个异常
-        logger.info("🔌 前端 WebSocket 断开连接")
+        logger.info("前端 WebSocket 断开连接")
     except Exception as e:
         # 其他未预期的错误
-        logger.error(f"❌ WebSocket 处理出错: {e}")
+        logger.error(f"WebSocket 处理出错: {e}")
     finally:
         # 无论如何，断开连接时都要从管理器中移除
         await ws_manager.disconnect(websocket)
@@ -231,6 +255,37 @@ async def health_check():
 
 
 # ============================================================================
+# Chart 数据 HTTP 接口
+#
+# 用于页面刷新时的初始数据加载。
+# 前端 fetchInitialData() 在 WebSocket 连接建立前先拉取最新缓存，
+# 确保首屏不空白。之后 WebSocket 负责实时推送。
+# ============================================================================
+
+@app.get("/api/charts/4")
+async def get_chart4():
+    """
+    获取 Chart4 最新数据快照
+
+    返回引擎中缓存的最新 Chart4Payload。
+    如果引擎尚未收到任何数据（刚启动），返回默认降级值。
+
+    使用场景：
+      - 页面刷新  fetch("/api/charts/4")  立即显示数据
+      - WebSocket 连接建立  之后的更新通过推送到达
+    """
+    if _engine is None:
+        return {
+            "line_data": [270, 400, 380, 420, 300, 410, 400, 330, 210, 290],
+            "total_revenue": 99608,
+            "enterprise_count": 7792,
+        }
+
+    data = await _engine.get_current_data()
+    return data
+
+
+# ============================================================================
 # 直接运行入口（开发调试用）
 #
 # 如果直接执行 `python main.py`（而不是通过 uvicorn），
@@ -238,7 +293,7 @@ async def health_check():
 # ============================================================================
 
 if __name__ == "__main__":
-    # 🔧 这种方式只适合开发调试，生产环境应该用 uvicorn 命令行
+    # 这种方式只适合开发调试，生产环境应该用 uvicorn 命令行
     import uvicorn
 
     port = int(os.getenv("FASTAPI_PORT", "8000"))
