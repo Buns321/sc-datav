@@ -3,7 +3,7 @@ chart4.py — Chart4（企业收益统计）的数据格式定义
 
 这个文件用 Pydantic 定义 Chart4 接收和发送的数据"应该长什么样"。
 
-🔧 写给嵌入式开发者：
+写给嵌入式开发者：
 
 类比：
    TypeScript 的 interface → 编译时帮你检查类型，编译后消失
@@ -30,7 +30,7 @@ class Chart4Payload(BaseModel):
     前端拿到这份数据后直接填入 ECharts 配置中。
     """
 
-    # 🔧 Field(description="...") 的作用：
+    # Field(description="...") 的作用：
     # 不仅给人类看，FastAPI 还会用它自动生成 API 文档（/docs 页面）
     line_data: list[int] = Field(
         default_factory=lambda: [270, 400, 380, 420, 300, 410, 400, 330, 210, 290],
@@ -40,7 +40,7 @@ class Chart4Payload(BaseModel):
     total_revenue: int = Field(
         default=99608,
         description="收益总计，单位：亿元",
-        ge=0,  # 🔧 ge=0 意思是 greater or equal to 0，即"必须 ≥ 0"
+        ge=0,  # ge=0 意思是 greater or equal to 0，即"必须 ≥ 0"
     )
 
     enterprise_count: int = Field(
@@ -59,10 +59,8 @@ class Chart4Message(BaseModel):
     """
 
     type: str = Field(
-        default="chart4_update",
-        description="消息类型。前端根据这个字段判断数据属于哪个频道",
-        # 🔧 虽然目前只有 chart4，但保留 type 字段是为了
-        # 后续扩展（chart1, chart2, ...）时不需要改消息结构
+        default="data",
+        description="消息类型。固定为 'data'，前端根据 channel 字段路由",
     )
 
     timestamp: str = Field(
