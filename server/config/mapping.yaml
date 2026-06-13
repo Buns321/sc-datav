@@ -5,6 +5,10 @@
 #   1. data_points  — IED 设备提供哪些传感器数据（ICD 的角色）
 #   2. charts        — 每个传感器的值怎么映射到前端图表的哪个字段
 #
+# source 字段说明：
+#   "iec61850" — 数据来自 IEC 61850 网关（经 TCP 推送）
+#   "mysql"    — 数据来自 MySQL 数据库轮询
+#
 # 使用方式：
 #   - 修改 data_points 段 = 换 IED 数据源
 #   - 修改 charts 段     = 改传感器→图表的映射关系
@@ -18,17 +22,17 @@
 # ── 传感器数据点定义 ─────────────────────────────────────────────────────
 # 每个 data_point 描述一个 IED 提供的测量值
 data_points:
-  - { ref: "MMXU1.A.phsA.cVal.mag.f",  label: "A 相电流",      default: 1.02,   unit: "kA"   }
-  - { ref: "MMXU1.A.phsB.cVal.mag.f",  label: "B 相电流",      default: 0.98,   unit: "kA"   }
-  - { ref: "MMXU1.A.phsC.cVal.mag.f",  label: "C 相电流",      default: 1.05,   unit: "kA"   }
-  - { ref: "MMXU1.PhV.phsA.cVal.mag.f",label: "A 相电压",      default: 220.0,  unit: "kV"   }
-  - { ref: "MMXU1.PhV.phsB.cVal.mag.f",label: "B 相电压",      default: 218.5,  unit: "kV"   }
-  - { ref: "MMXU1.PhV.phsC.cVal.mag.f",label: "C 相电压",      default: 221.3,  unit: "kV"   }
-  - { ref: "MMXU1.W.phsA.cVal.mag.f",  label: "A 相有功功率",   default: 330.0,  unit: "MW"   }
-  - { ref: "MMXU1.W.phsB.cVal.mag.f",  label: "B 相有功功率",   default: 325.0,  unit: "MW"   }
-  - { ref: "MMXU1.W.phsC.cVal.mag.f",  label: "C 相有功功率",   default: 341.0,  unit: "MW"   }
-  - { ref: "MMTR1.TotWh.act",          label: "总有功电能",     default: 99608,  unit: "MWh"  }
-  - { ref: "GGIO1.IntIn1.stVal",       label: "企业数量指示",   default: 7792,   unit: "个"   }
+  - { ref: "MMXU1.A.phsA.cVal.mag.f",  label: "A 相电流",      default: 1.02,   unit: "kA",   source: "iec61850" }
+  - { ref: "MMXU1.A.phsB.cVal.mag.f",  label: "B 相电流",      default: 0.98,   unit: "kA",   source: "iec61850" }
+  - { ref: "MMXU1.A.phsC.cVal.mag.f",  label: "C 相电流",      default: 1.05,   unit: "kA",   source: "iec61850" }
+  - { ref: "MMXU1.PhV.phsA.cVal.mag.f",label: "A 相电压",      default: 220.0,  unit: "kV",   source: "iec61850" }
+  - { ref: "MMXU1.PhV.phsB.cVal.mag.f",label: "B 相电压",      default: 218.5,  unit: "kV",   source: "iec61850" }
+  - { ref: "MMXU1.PhV.phsC.cVal.mag.f",label: "C 相电压",      default: 221.3,  unit: "kV",   source: "iec61850" }
+  - { ref: "MMXU1.W.phsA.cVal.mag.f",  label: "A 相有功功率",   default: 330.0,  unit: "MW",   source: "iec61850" }
+  - { ref: "MMXU1.W.phsB.cVal.mag.f",  label: "B 相有功功率",   default: 325.0,  unit: "MW",   source: "iec61850" }
+  - { ref: "MMXU1.W.phsC.cVal.mag.f",  label: "C 相有功功率",   default: 341.0,  unit: "MW",   source: "iec61850" }
+  - { ref: "MMTR1.TotWh.act",          label: "总有功电能",     default: 99608,  unit: "MWh",  source: "iec61850" }
+  - { ref: "GGIO1.IntIn1.stVal",       label: "企业数量指示",   default: 7792,   unit: "个",   source: "iec61850" }
 
 # ── 图表映射规则 ─────────────────────────────────────────────────────────
 charts:
@@ -37,28 +41,44 @@ charts:
     # 标量字段：一个 DO ref → 一个字段
     single:
       total_revenue:
-        ref: "MMTR1.TotWh.act"
-        transform: "round(v / 10000)"     # MWh → 亿元
+        source: "mysql"
+        # ref 和 transform 由 mysql_queries 段提供
 
       enterprise_count:
-        ref: "GGIO1.IntIn1.stVal"
-        transform: "int(v)"             # 取整
+        source: "mysql"
+        # ref 和 transform 由 mysql_queries 段提供
 
     # 数组字段：多个 DO ref → 一个 line_data 数组（每个元素可乘缩放系数）
     array:
       line_data:
-        - { ref: "MMXU1.A.phsA.cVal.mag.f",  scale: 265   }  # 1.02 × 265 ≈ 270
-        - { ref: "MMXU1.A.phsB.cVal.mag.f",  scale: 408   }  # 0.98 × 408 ≈ 400
-        - { ref: "MMXU1.A.phsC.cVal.mag.f",  scale: 362   }  # 1.05 × 362 ≈ 380
-        - { ref: "MMXU1.PhV.phsA.cVal.mag.f",scale: 1.9   }  # 220  × 1.9 ≈ 418
-        - { ref: "MMXU1.PhV.phsB.cVal.mag.f",scale: 1.4   }  # 218  × 1.4 ≈ 305
-        - { ref: "MMXU1.PhV.phsC.cVal.mag.f",scale: 1.9   }  # 221  × 1.9 ≈ 420
-        - { ref: "MMXU1.W.phsA.cVal.mag.f",  scale: 1.2   }  # 330  × 1.2 = 396
-        - { ref: "MMXU1.W.phsB.cVal.mag.f",  scale: 1.0   }  # 325  × 1.0 = 325
-        - { ref: "MMXU1.W.phsC.cVal.mag.f",  scale: 0.6   }  # 341  × 0.6 ≈ 205
-        - { ref: "MMTR1.TotWh.act",          scale: 0.003  }  # 99608×0.003≈299
+        - { source: "iec61850", ref: "MMXU1.A.phsA.cVal.mag.f",  scale: 265   }  # 1.02 × 265 ≈ 270
+        - { source: "iec61850", ref: "MMXU1.A.phsB.cVal.mag.f",  scale: 408   }  # 0.98 × 408 ≈ 400
+        - { source: "iec61850", ref: "MMXU1.A.phsC.cVal.mag.f",  scale: 362   }  # 1.05 × 362 ≈ 380
+        - { source: "iec61850", ref: "MMXU1.PhV.phsA.cVal.mag.f",scale: 1.9   }  # 220  × 1.9 ≈ 418
+        - { source: "iec61850", ref: "MMXU1.PhV.phsB.cVal.mag.f",scale: 1.4   }  # 218  × 1.4 ≈ 305
+        - { source: "iec61850", ref: "MMXU1.PhV.phsC.cVal.mag.f",scale: 1.9   }  # 221  × 1.9 ≈ 420
+        - { source: "iec61850", ref: "MMXU1.W.phsA.cVal.mag.f",  scale: 1.2   }  # 330  × 1.2 = 396
+        - { source: "iec61850", ref: "MMXU1.W.phsB.cVal.mag.f",  scale: 1.0   }  # 325  × 1.0 = 325
+        - { source: "iec61850", ref: "MMXU1.W.phsC.cVal.mag.f",  scale: 0.6   }  # 341  × 0.6 ≈ 205
+        - { source: "iec61850", ref: "MMTR1.TotWh.act",          scale: 0.003  }  # 99608×0.003≈299
 
   # 后续新增图表时，在这里添加 chart1~6 段即可
   # chart1:
+  #   source: "iec61850"
   #   single: ...
   #   array:  ...
+
+# ── MySQL 查询定义 ───────────────────────────────────────────────────────
+# 定义从 MySQL 数据库中轮询的字段。
+# 每个 chart 下按字段列出 SQL 查询和 transform 表达式。
+# mysql_consumer 启动后按 polling_interval 秒间隔执行这些查询。
+mysql_queries:
+  chart4:
+    - field: "total_revenue"
+      query: "SELECT total FROM revenue_table ORDER BY id DESC LIMIT 1"
+      transform: "round(v / 10000)"
+      default: 99608
+    - field: "enterprise_count"
+      query: "SELECT count FROM enterprise_table ORDER BY id DESC LIMIT 1"
+      transform: "int(v)"
+      default: 7792
