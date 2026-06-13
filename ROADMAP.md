@@ -1,6 +1,6 @@
 # 项目路线图
 
-> 最后更新：2026-06-05
+> 最后更新：2026-06-13
 
 ---
 
@@ -21,6 +21,7 @@
 
 | 状态 | 任务 | 优先级 | 拆解 | 更新日期 | 备注 |
 |------|------|--------|------|----------|------|
+| 📋 计划中 | 后端核心模块单元测试 | 高 | ① 安装 pytest（取消 pyproject.toml 中 dev 依赖的注释）<br>② `tests/test_engine.py`：DataEngine 的 push_data 返回值、多源合并不覆盖 line_data、降级默认值<br>③ `tests/test_config_loader.py`：按 source 过滤、MySQL queries 字段名校验、YAML 不可用时降级<br>④ 跑通 `python -m pytest tests/ -v` | 2026-06-13 | engine.py 和 config_loader.py 是重构核心，优先覆盖 |
 | 📋 计划中 | 项目文档撰写 | 低 | ① 待项目沉淀更成熟后启动<br>② 具体内容/形式待定 | 2026-05-25 | 时机未到，先占位 |
 | ✅ 已完成 | 统一配置系统 | 中 | ① 创建 `src/config/config.ts` 单一配置文件，集中管理摄像机、灯光、材质、特效、轨道控制器、特性开关、文案<br>② 8 个组件已改为从 `DC.xxx` 读取参数，消除所有硬编码 magic number<br>③ 删除了旧的散落配置文件 `camera.ts`、`materials.ts`、`texts.ts`<br>④ 按页面/场景覆盖：后续新页面可创建各自的 `config.{page}.ts` | 2026-06-05 | 大一统 config 落地，改参数只需一个文件 |
 
