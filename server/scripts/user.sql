@@ -1,0 +1,3 @@
+CREATE USER IF NOT EXISTS 'sc_datav'@'127.0.0.1' IDENTIFIED BY 'sc_datav_pass';
+GRANT ALL PRIVILEGES ON sc_datav.* TO 'sc_datav'@'127.0.0.1';
+FLUSH PRIVILEGES;
